@@ -36,6 +36,7 @@
 		Aggregation
 		TopN
 		Limit
+		BloomFilter
 		ExecutorExecutionSummary
 		FieldType
 		Expr

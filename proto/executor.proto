@@ -21,6 +21,7 @@ enum ExecType {
 	TypeTopN = 4;
 	TypeLimit = 5;
 	TypeStreamAgg = 6;
+	TypeBloomFilter = 7;
 }
 
 // It represents a Executor.
@@ -33,6 +34,7 @@ message Executor {
 	optional TopN topN = 6;
 	optional Limit limit = 7;
 	optional Aggregation stream_agg= 8;
+	optional BloomFilter bloom_filter = 9;
 }
 
 message TableScan {
@@ -77,6 +79,13 @@ message TopN {
 message Limit {
 	// Limit the result to be returned.
 	optional uint64 limit = 1 [(gogoproto.nullable) = false];
+}
+
+message BloomFilter {
+	// Bloom filter container
+	repeated fixed64 bit_set = 1;
+	// Column indices of join keys
+	repeated int64 col_idx = 2;
 }
 
 message ExecutorExecutionSummary {
