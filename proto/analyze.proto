@@ -6,6 +6,7 @@ option java_multiple_files = true;
 option java_package = "com.pingcap.tidb.tipb";
 
 import "schema.proto";
+import "expression.proto";
 import "gogoproto/gogo.proto";
 
 option (gogoproto.marshaler_all) = true;
@@ -76,6 +77,8 @@ message AnalyzeColumnsReq {
     repeated int64 primary_prefix_column_ids = 9;
 
     repeated AnalyzeColumnGroup column_groups = 10;
+
+    repeated Expr virtual_col_exprs = 11;
 }
 
 message AnalyzeMixedResp {
