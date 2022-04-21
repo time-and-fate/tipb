@@ -15,6 +15,7 @@
 		select.proto
 		topsql_agent.proto
 		trace.proto
+		visual_plan.proto
 
 	It has these top-level messages:
 		AnalyzeReq
@@ -81,6 +82,7 @@
 		EmptyResponse
 		TopSQLSubRequest
 		TopSQLSubResponse
+		VisualData
 */
 package tipb
 
@@ -90,6 +92,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 
 	math "math"
+
+	_ "github.com/gogo/protobuf/gogoproto"
 
 	encoding_binary "encoding/binary"
 

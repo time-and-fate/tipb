@@ -1,0 +1,37 @@
+syntax = "proto2";
+
+package tipb;
+
+option java_multiple_files = true;
+option java_package = "com.pingcap.tidb.tipb";
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+
+message VisualData {
+    // the name of the current operator
+    required string name = 1 [(gogoproto.nullable) = false];
+    // the cost of the current operator
+    //  for "visual analyze stmt" or slow queries: cost means real cost
+    //  for "visual stmt": cost means est_cost
+    required double cost = 2 [(gogoproto.nullable) = false];
+
+    required double est_rows = 3 [(gogoproto.nullable) = false];
+    required uint64 act_rows = 4 [(gogoproto.nullable) = false];
+
+    // The reader may use this
+    required string access_table = 5 [(gogoproto.nullable) = false];
+    required string access_index = 6 [(gogoproto.nullable) = false];
+    required string access_partition = 7 [(gogoproto.nullable) = false];
+
+    // The time spent by the current operator 
+    required double time_us = 8 [(gogoproto.nullable) = false];
+    // The current operator run at root/cop[tikv]/cop[tiflash]/cop[tidb]
+    required string run_at = 9 [(gogoproto.nullable) = false];
+    // The children of the current operator
+    repeated VisualData children = 10;
+}
