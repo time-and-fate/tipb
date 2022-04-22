@@ -83,6 +83,7 @@
 		TopSQLSubRequest
 		TopSQLSubResponse
 		VisualData
+		VisualOperator
 */
 package tipb
 

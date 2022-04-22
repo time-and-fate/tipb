@@ -12,11 +12,11 @@ import (
 
 	_ "github.com/gogo/protobuf/gogoproto"
 
+	github_com_golang_protobuf_proto "github.com/golang/protobuf/proto"
+
 	encoding_binary "encoding/binary"
 
 	io "io"
-
-	github_com_golang_protobuf_proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -25,6 +25,39 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type VisualData struct {
+	Main             *VisualOperator   `protobuf:"bytes,1,req,name=main" json:"main,omitempty"`
+	Ctes             []*VisualOperator `protobuf:"bytes,2,rep,name=ctes" json:"ctes,omitempty"`
+	WithRuntimeStats bool              `protobuf:"varint,3,req,name=with_runtime_stats,json=withRuntimeStats" json:"with_runtime_stats"`
+	XXX_unrecognized []byte            `json:"-"`
+}
+
+func (m *VisualData) Reset()                    { *m = VisualData{} }
+func (m *VisualData) String() string            { return proto.CompactTextString(m) }
+func (*VisualData) ProtoMessage()               {}
+func (*VisualData) Descriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{0} }
+
+func (m *VisualData) GetMain() *VisualOperator {
+	if m != nil {
+		return m.Main
+	}
+	return nil
+}
+
+func (m *VisualData) GetCtes() []*VisualOperator {
+	if m != nil {
+		return m.Ctes
+	}
+	return nil
+}
+
+func (m *VisualData) GetWithRuntimeStats() bool {
+	if m != nil {
+		return m.WithRuntimeStats
+	}
+	return false
+}
+
+type VisualOperator struct {
 	// the name of the current operator
 	Name string `protobuf:"bytes,1,req,name=name" json:"name"`
 	// the cost of the current operator
@@ -42,79 +75,79 @@ type VisualData struct {
 	// The current operator run at root/cop[tikv]/cop[tiflash]/cop[tidb]
 	RunAt string `protobuf:"bytes,9,req,name=run_at,json=runAt" json:"run_at"`
 	// The children of the current operator
-	Children         []*VisualData `protobuf:"bytes,10,rep,name=children" json:"children,omitempty"`
-	XXX_unrecognized []byte        `json:"-"`
+	Children         []*VisualOperator `protobuf:"bytes,10,rep,name=children" json:"children,omitempty"`
+	XXX_unrecognized []byte            `json:"-"`
 }
 
-func (m *VisualData) Reset()                    { *m = VisualData{} }
-func (m *VisualData) String() string            { return proto.CompactTextString(m) }
-func (*VisualData) ProtoMessage()               {}
-func (*VisualData) Descriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{0} }
+func (m *VisualOperator) Reset()                    { *m = VisualOperator{} }
+func (m *VisualOperator) String() string            { return proto.CompactTextString(m) }
+func (*VisualOperator) ProtoMessage()               {}
+func (*VisualOperator) Descriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{1} }
 
-func (m *VisualData) GetName() string {
+func (m *VisualOperator) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *VisualData) GetCost() float64 {
+func (m *VisualOperator) GetCost() float64 {
 	if m != nil {
 		return m.Cost
 	}
 	return 0
 }
 
-func (m *VisualData) GetEstRows() float64 {
+func (m *VisualOperator) GetEstRows() float64 {
 	if m != nil {
 		return m.EstRows
 	}
 	return 0
 }
 
-func (m *VisualData) GetActRows() uint64 {
+func (m *VisualOperator) GetActRows() uint64 {
 	if m != nil {
 		return m.ActRows
 	}
 	return 0
 }
 
-func (m *VisualData) GetAccessTable() string {
+func (m *VisualOperator) GetAccessTable() string {
 	if m != nil {
 		return m.AccessTable
 	}
 	return ""
 }
 
-func (m *VisualData) GetAccessIndex() string {
+func (m *VisualOperator) GetAccessIndex() string {
 	if m != nil {
 		return m.AccessIndex
 	}
 	return ""
 }
 
-func (m *VisualData) GetAccessPartition() string {
+func (m *VisualOperator) GetAccessPartition() string {
 	if m != nil {
 		return m.AccessPartition
 	}
 	return ""
 }
 
-func (m *VisualData) GetTimeUs() float64 {
+func (m *VisualOperator) GetTimeUs() float64 {
 	if m != nil {
 		return m.TimeUs
 	}
 	return 0
 }
 
-func (m *VisualData) GetRunAt() string {
+func (m *VisualOperator) GetRunAt() string {
 	if m != nil {
 		return m.RunAt
 	}
 	return ""
 }
 
-func (m *VisualData) GetChildren() []*VisualData {
+func (m *VisualOperator) GetChildren() []*VisualOperator {
 	if m != nil {
 		return m.Children
 	}
@@ -123,6 +156,7 @@ func (m *VisualData) GetChildren() []*VisualData {
 
 func init() {
 	proto.RegisterType((*VisualData)(nil), "tipb.VisualData")
+	proto.RegisterType((*VisualOperator)(nil), "tipb.VisualOperator")
 }
 func (m *VisualData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -135,6 +169,59 @@ func (m *VisualData) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *VisualData) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Main == nil {
+		return 0, new(github_com_golang_protobuf_proto.RequiredNotSetError)
+	} else {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.Main.Size()))
+		n1, err := m.Main.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n1
+	}
+	if len(m.Ctes) > 0 {
+		for _, msg := range m.Ctes {
+			dAtA[i] = 0x12
+			i++
+			i = encodeVarintVisualPlan(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	dAtA[i] = 0x18
+	i++
+	if m.WithRuntimeStats {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i++
+	if m.XXX_unrecognized != nil {
+		i += copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+
+func (m *VisualOperator) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VisualOperator) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -204,6 +291,26 @@ func encodeVarintVisualPlan(dAtA []byte, offset int, v uint64) int {
 func (m *VisualData) Size() (n int) {
 	var l int
 	_ = l
+	if m.Main != nil {
+		l = m.Main.Size()
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	if len(m.Ctes) > 0 {
+		for _, e := range m.Ctes {
+			l = e.Size()
+			n += 1 + l + sovVisualPlan(uint64(l))
+		}
+	}
+	n += 2
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *VisualOperator) Size() (n int) {
+	var l int
+	_ = l
 	l = len(m.Name)
 	n += 1 + l + sovVisualPlan(uint64(l))
 	n += 9
@@ -271,6 +378,150 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: VisualData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Main", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Main == nil {
+				m.Main = &VisualOperator{}
+			}
+			if err := m.Main.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+			hasFields[0] |= uint64(0x00000001)
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ctes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ctes = append(m.Ctes, &VisualOperator{})
+			if err := m.Ctes[len(m.Ctes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WithRuntimeStats", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.WithRuntimeStats = bool(v != 0)
+			hasFields[0] |= uint64(0x00000002)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipVisualPlan(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+	if hasFields[0]&uint64(0x00000001) == 0 {
+		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
+	}
+	if hasFields[0]&uint64(0x00000002) == 0 {
+		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VisualOperator) Unmarshal(dAtA []byte) error {
+	var hasFields [1]uint64
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowVisualPlan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VisualOperator: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VisualOperator: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -505,7 +756,7 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Children = append(m.Children, &VisualData{})
+			m.Children = append(m.Children, &VisualOperator{})
 			if err := m.Children[len(m.Children)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -667,25 +918,29 @@ var (
 func init() { proto.RegisterFile("visual_plan.proto", fileDescriptorVisualPlan) }
 
 var fileDescriptorVisualPlan = []byte{
-	// 312 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x90, 0xdd, 0x4a, 0xc3, 0x30,
-	0x14, 0x80, 0xd7, 0xae, 0xfb, 0xcb, 0x04, 0x67, 0x50, 0x08, 0x8a, 0x5d, 0xf1, 0xc6, 0x0a, 0xd2,
-	0x81, 0x6f, 0xe0, 0xf0, 0xc6, 0xbb, 0x31, 0xd4, 0xdb, 0x72, 0x96, 0x85, 0x19, 0xe8, 0x92, 0xd2,
-	0x9c, 0x3a, 0x1f, 0xc5, 0x47, 0xda, 0xa5, 0x4f, 0x20, 0x32, 0x1f, 0xc0, 0x57, 0x90, 0xb4, 0xab,
-	0x06, 0xbc, 0x0b, 0xdf, 0xf7, 0x9d, 0x84, 0x1c, 0x72, 0xf4, 0x22, 0x4d, 0x09, 0x59, 0x9a, 0x67,
-	0xa0, 0x92, 0xbc, 0xd0, 0xa8, 0x69, 0x80, 0x32, 0x5f, 0x9c, 0x1e, 0xaf, 0xf4, 0x4a, 0x57, 0x60,
-	0x62, 0x4f, 0xb5, 0xbb, 0xf8, 0xf6, 0x09, 0x79, 0xaa, 0x26, 0xee, 0x00, 0x81, 0x32, 0x12, 0x28,
-	0x58, 0x0b, 0xe6, 0x45, 0x7e, 0x3c, 0x98, 0x06, 0xdb, 0x8f, 0x71, 0x6b, 0x5e, 0x11, 0x6b, 0xb8,
-	0x36, 0xc8, 0xfc, 0xc8, 0x8f, 0xbd, 0xc6, 0x58, 0x42, 0xc7, 0xa4, 0x2f, 0x0c, 0xa6, 0x85, 0xde,
-	0x18, 0xd6, 0x76, 0x6c, 0x4f, 0x18, 0x9c, 0xeb, 0x8d, 0xb1, 0x01, 0xf0, 0x7d, 0x10, 0x44, 0x7e,
-	0x1c, 0x34, 0x01, 0xf0, 0x3a, 0xb8, 0x24, 0x07, 0xc0, 0xb9, 0x30, 0x26, 0x45, 0x58, 0x64, 0x82,
-	0x75, 0x9c, 0xd7, 0x87, 0xb5, 0x79, 0xb0, 0xc2, 0x09, 0xa5, 0x5a, 0x8a, 0x57, 0xd6, 0xfd, 0x1f,
-	0xde, 0x5b, 0x41, 0x27, 0x64, 0xb4, 0x0f, 0x73, 0x28, 0x50, 0xa2, 0xd4, 0x8a, 0xf5, 0x9c, 0xf8,
-	0xb0, 0xb6, 0xb3, 0x46, 0xd2, 0x73, 0xd2, 0x43, 0xb9, 0x16, 0x69, 0x69, 0x58, 0xdf, 0xf9, 0x43,
-	0xd7, 0xc2, 0x47, 0x43, 0xcf, 0x48, 0xb7, 0x28, 0x55, 0x0a, 0xc8, 0x06, 0xce, 0x2d, 0x9d, 0xa2,
-	0x54, 0xb7, 0x48, 0xaf, 0x49, 0x9f, 0x3f, 0xcb, 0x6c, 0x59, 0x08, 0xc5, 0x48, 0xd4, 0x8e, 0x87,
-	0x37, 0xa3, 0xc4, 0xae, 0x3c, 0xf9, 0x5b, 0xec, 0xfc, 0xb7, 0x98, 0x5e, 0x6d, 0x77, 0xa1, 0xf7,
-	0xbe, 0x0b, 0xbd, 0xcf, 0x5d, 0xe8, 0xbd, 0x7d, 0x85, 0x2d, 0x72, 0xc2, 0xf5, 0x3a, 0xc9, 0xa5,
-	0x5a, 0x71, 0xc8, 0x13, 0x94, 0xcb, 0x45, 0x35, 0x3d, 0xf3, 0x7e, 0x02, 0x00, 0x00, 0xff, 0xff,
-	0x57, 0x01, 0xb4, 0xf8, 0xcc, 0x01, 0x00, 0x00,
+	// 377 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xc1, 0x6e, 0xda, 0x30,
+	0x18, 0xc7, 0x49, 0x08, 0x10, 0xcc, 0xb4, 0x31, 0x8b, 0x49, 0xd6, 0xa6, 0x85, 0x88, 0xcb, 0xb2,
+	0x4b, 0x98, 0x78, 0x83, 0xa1, 0x5d, 0x76, 0x1a, 0xca, 0xda, 0x5e, 0x23, 0x63, 0x2c, 0xb0, 0x94,
+	0xd8, 0x91, 0xfd, 0xa5, 0xf4, 0x41, 0x7a, 0xe8, 0x23, 0x71, 0xec, 0x13, 0x54, 0x15, 0x7d, 0x88,
+	0x5e, 0x2b, 0x27, 0xa4, 0x4a, 0x55, 0xb5, 0xb7, 0xe8, 0xff, 0xfb, 0x7d, 0xff, 0x2f, 0xb6, 0xd1,
+	0xe7, 0x4b, 0x61, 0x4a, 0x9a, 0xa5, 0x45, 0x46, 0x65, 0x5c, 0x68, 0x05, 0x0a, 0x7b, 0x20, 0x8a,
+	0xf5, 0xd7, 0xc9, 0x56, 0x6d, 0x55, 0x15, 0xcc, 0xed, 0x57, 0xcd, 0x66, 0xd7, 0x0e, 0x42, 0x17,
+	0xd5, 0xc4, 0x1f, 0x0a, 0x14, 0x47, 0xc8, 0xcb, 0xa9, 0x90, 0xc4, 0x09, 0xdd, 0x68, 0xb4, 0x98,
+	0xc4, 0x76, 0x32, 0xae, 0xf9, 0xbf, 0x82, 0x6b, 0x0a, 0x4a, 0x27, 0x95, 0x61, 0x4d, 0x06, 0xdc,
+	0x10, 0x37, 0xec, 0xbe, 0x6d, 0x5a, 0x03, 0x2f, 0x10, 0xde, 0x0b, 0xd8, 0xa5, 0xba, 0x94, 0x20,
+	0x72, 0x9e, 0x1a, 0xa0, 0x60, 0x48, 0x37, 0x74, 0x23, 0x7f, 0xe9, 0x1d, 0xee, 0xa6, 0x9d, 0x64,
+	0x6c, 0x79, 0x52, 0xe3, 0xff, 0x96, 0xce, 0x1e, 0x5d, 0xf4, 0xf1, 0x65, 0x19, 0x26, 0xc8, 0x93,
+	0x34, 0xe7, 0xd5, 0xaf, 0x0d, 0x4f, 0x83, 0x55, 0x62, 0x09, 0x53, 0x06, 0x88, 0x1b, 0xba, 0x91,
+	0xd3, 0x10, 0x9b, 0xe0, 0x29, 0xf2, 0xb9, 0x81, 0x54, 0xab, 0x7d, 0xbd, 0xb0, 0xa1, 0x03, 0x6e,
+	0x20, 0x51, 0x7b, 0x63, 0x05, 0xca, 0x4e, 0x82, 0x17, 0xba, 0x91, 0xd7, 0x08, 0x94, 0xd5, 0xc2,
+	0x0f, 0xf4, 0x81, 0x32, 0xc6, 0x8d, 0x49, 0x81, 0xae, 0x33, 0x4e, 0x7a, 0xad, 0xed, 0xa3, 0x9a,
+	0x9c, 0x59, 0xd0, 0x12, 0x85, 0xdc, 0xf0, 0x2b, 0xd2, 0x7f, 0x2d, 0xfe, 0xb5, 0x00, 0xcf, 0xd1,
+	0xf8, 0x24, 0x16, 0x54, 0x83, 0x00, 0xa1, 0x24, 0x19, 0xb4, 0xe4, 0x4f, 0x35, 0x5d, 0x35, 0x10,
+	0x7f, 0x47, 0x83, 0xea, 0xde, 0x4a, 0x43, 0xfc, 0xd6, 0x19, 0xfa, 0x36, 0x3c, 0x37, 0xf8, 0x1b,
+	0xea, 0xeb, 0x52, 0xa6, 0x14, 0xc8, 0xb0, 0xd5, 0xd2, 0xd3, 0xa5, 0xfc, 0x0d, 0xf8, 0x17, 0xf2,
+	0xd9, 0x4e, 0x64, 0x1b, 0xcd, 0x25, 0x41, 0xef, 0xbc, 0xd4, 0xb3, 0xb5, 0xfc, 0x79, 0x38, 0x06,
+	0xce, 0xed, 0x31, 0x70, 0xee, 0x8f, 0x81, 0x73, 0xf3, 0x10, 0x74, 0xd0, 0x17, 0xa6, 0xf2, 0xb8,
+	0x10, 0x72, 0xcb, 0x68, 0x11, 0x83, 0xd8, 0xac, 0xab, 0x86, 0x95, 0xf3, 0x14, 0x00, 0x00, 0xff,
+	0xff, 0x98, 0xd4, 0x93, 0x91, 0x6b, 0x02, 0x00, 0x00,
 }

@@ -13,25 +13,31 @@ option (gogoproto.unmarshaler_all) = true;
 
 
 message VisualData {
+    required VisualOperator main = 1;
+    repeated VisualOperator ctes = 2;
+    required bool with_runtime_stats = 3 [(gogoproto.nullable) = false];
+}
+
+message VisualOperator {
     // the name of the current operator
     required string name = 1 [(gogoproto.nullable) = false];
     // the cost of the current operator
-    //  for "visual analyze stmt" or slow queries: cost means real cost
-    //  for "visual stmt": cost means est_cost
+    // runtime stats available: cost means real cost
+    // runtime stats unavailable: cost means est_cost
     required double cost = 2 [(gogoproto.nullable) = false];
 
     required double est_rows = 3 [(gogoproto.nullable) = false];
     required uint64 act_rows = 4 [(gogoproto.nullable) = false];
 
-    // The reader may use this
+    // The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
     required string access_table = 5 [(gogoproto.nullable) = false];
     required string access_index = 6 [(gogoproto.nullable) = false];
     required string access_partition = 7 [(gogoproto.nullable) = false];
 
     // The time spent by the current operator 
     required double time_us = 8 [(gogoproto.nullable) = false];
-    // The current operator run at root/cop[tikv]/cop[tiflash]/cop[tidb]
+    // The current operator run at tidb/tikv/tiflash
     required string run_at = 9 [(gogoproto.nullable) = false];
     // The children of the current operator
-    repeated VisualData children = 10;
+    repeated VisualOperator children = 10;
 }
