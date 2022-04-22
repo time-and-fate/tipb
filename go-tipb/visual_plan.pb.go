@@ -10,8 +10,6 @@ import (
 
 	math "math"
 
-	_ "github.com/gogo/protobuf/gogoproto"
-
 	github_com_golang_protobuf_proto "github.com/golang/protobuf/proto"
 
 	encoding_binary "encoding/binary"
@@ -61,18 +59,18 @@ type VisualOperator struct {
 	// the name of the current operator
 	Name string `protobuf:"bytes,1,req,name=name" json:"name"`
 	// the cost of the current operator
-	//  for "visual analyze stmt" or slow queries: cost means real cost
-	//  for "visual stmt": cost means est_cost
+	// runtime stats available: cost means real cost
+    // runtime stats unavailable: cost means est_cost
 	Cost    float64 `protobuf:"fixed64,2,req,name=cost" json:"cost"`
 	EstRows float64 `protobuf:"fixed64,3,req,name=est_rows,json=estRows" json:"est_rows"`
 	ActRows uint64  `protobuf:"varint,4,req,name=act_rows,json=actRows" json:"act_rows"`
-	// The reader may use this
+	// The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
 	AccessTable     string `protobuf:"bytes,5,req,name=access_table,json=accessTable" json:"access_table"`
 	AccessIndex     string `protobuf:"bytes,6,req,name=access_index,json=accessIndex" json:"access_index"`
 	AccessPartition string `protobuf:"bytes,7,req,name=access_partition,json=accessPartition" json:"access_partition"`
 	// The time spent by the current operator
 	TimeUs float64 `protobuf:"fixed64,8,req,name=time_us,json=timeUs" json:"time_us"`
-	// The current operator run at root/cop[tikv]/cop[tiflash]/cop[tidb]
+	// The current operator run at tidb/tikv/tiflash
 	RunAt string `protobuf:"bytes,9,req,name=run_at,json=runAt" json:"run_at"`
 	// The children of the current operator
 	Children         []*VisualOperator `protobuf:"bytes,10,rep,name=children" json:"children,omitempty"`
