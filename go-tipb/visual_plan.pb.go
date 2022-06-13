@@ -3,30 +3,111 @@
 
 package tipb
 
-import (
-	"fmt"
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import _ "github.com/gogo/protobuf/gogoproto"
 
-	proto "github.com/golang/protobuf/proto"
+import encoding_binary "encoding/binary"
 
-	math "math"
-
-	github_com_golang_protobuf_proto "github.com/golang/protobuf/proto"
-
-	encoding_binary "encoding/binary"
-
-	io "io"
-)
+import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+type TaskType int32
+
+const (
+	TaskType_unknown  TaskType = 0
+	TaskType_root     TaskType = 1
+	TaskType_cop      TaskType = 2
+	TaskType_batchCop TaskType = 3
+	TaskType_mpp      TaskType = 4
+)
+
+var TaskType_name = map[int32]string{
+	0: "unknown",
+	1: "root",
+	2: "cop",
+	3: "batchCop",
+	4: "mpp",
+}
+var TaskType_value = map[string]int32{
+	"unknown":  0,
+	"root":     1,
+	"cop":      2,
+	"batchCop": 3,
+	"mpp":      4,
+}
+
+func (x TaskType) String() string {
+	return proto.EnumName(TaskType_name, int32(x))
+}
+func (TaskType) EnumDescriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{0} }
+
+type StoreType int32
+
+const (
+	StoreType_unspecified StoreType = 0
+	StoreType_tidb        StoreType = 1
+	StoreType_tikv        StoreType = 2
+	StoreType_tiflash     StoreType = 3
+)
+
+var StoreType_name = map[int32]string{
+	0: "unspecified",
+	1: "tidb",
+	2: "tikv",
+	3: "tiflash",
+}
+var StoreType_value = map[string]int32{
+	"unspecified": 0,
+	"tidb":        1,
+	"tikv":        2,
+	"tiflash":     3,
+}
+
+func (x StoreType) String() string {
+	return proto.EnumName(StoreType_name, int32(x))
+}
+func (StoreType) EnumDescriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{1} }
+
+type DriverSide int32
+
+const (
+	DriverSide_empty     DriverSide = 0
+	DriverSide_build     DriverSide = 1
+	DriverSide_probe     DriverSide = 2
+	DriverSide_seed      DriverSide = 3
+	DriverSide_recursive DriverSide = 4
+)
+
+var DriverSide_name = map[int32]string{
+	0: "empty",
+	1: "build",
+	2: "probe",
+	3: "seed",
+	4: "recursive",
+}
+var DriverSide_value = map[string]int32{
+	"empty":     0,
+	"build":     1,
+	"probe":     2,
+	"seed":      3,
+	"recursive": 4,
+}
+
+func (x DriverSide) String() string {
+	return proto.EnumName(DriverSide_name, int32(x))
+}
+func (DriverSide) EnumDescriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{2} }
+
 type VisualData struct {
-	Main             *VisualOperator   `protobuf:"bytes,1,req,name=main" json:"main,omitempty"`
+	Main             *VisualOperator   `protobuf:"bytes,1,opt,name=main" json:"main,omitempty"`
 	Ctes             []*VisualOperator `protobuf:"bytes,2,rep,name=ctes" json:"ctes,omitempty"`
-	WithRuntimeStats bool              `protobuf:"varint,3,req,name=with_runtime_stats,json=withRuntimeStats" json:"with_runtime_stats"`
-	XXX_unrecognized []byte            `json:"-"`
+	WithRuntimeStats bool              `protobuf:"varint,3,opt,name=with_runtime_stats,json=withRuntimeStats,proto3" json:"with_runtime_stats,omitempty"`
 }
 
 func (m *VisualData) Reset()                    { *m = VisualData{} }
@@ -56,25 +137,29 @@ func (m *VisualData) GetWithRuntimeStats() bool {
 }
 
 type VisualOperator struct {
+	// The children of the current operator
+	Children []*VisualOperator `protobuf:"bytes,1,rep,name=children" json:"children,omitempty"`
 	// the name of the current operator
-	Name string `protobuf:"bytes,1,req,name=name" json:"name"`
+	Name       string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DriverSide DriverSide `protobuf:"varint,3,opt,name=driver_side,json=driverSide,proto3,enum=tipb.DriverSide" json:"driver_side,omitempty"`
 	// the cost of the current operator
 	// runtime stats available: cost means real cost
-    // runtime stats unavailable: cost means est_cost
-	Cost    float64 `protobuf:"fixed64,2,req,name=cost" json:"cost"`
-	EstRows float64 `protobuf:"fixed64,3,req,name=est_rows,json=estRows" json:"est_rows"`
-	ActRows uint64  `protobuf:"varint,4,req,name=act_rows,json=actRows" json:"act_rows"`
+	// runtime stats unavailable: cost means est_cost
+	Cost      float64   `protobuf:"fixed64,4,opt,name=cost,proto3" json:"cost,omitempty"`
+	EstRows   float64   `protobuf:"fixed64,5,opt,name=est_rows,json=estRows,proto3" json:"est_rows,omitempty"`
+	ActRows   uint64    `protobuf:"varint,6,opt,name=act_rows,json=actRows,proto3" json:"act_rows,omitempty"`
+	TaskType  TaskType  `protobuf:"varint,7,opt,name=task_type,json=taskType,proto3,enum=tipb.TaskType" json:"task_type,omitempty"`
+	StoreType StoreType `protobuf:"varint,8,opt,name=store_type,json=storeType,proto3,enum=tipb.StoreType" json:"store_type,omitempty"`
 	// The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
-	AccessTable     string `protobuf:"bytes,5,req,name=access_table,json=accessTable" json:"access_table"`
-	AccessIndex     string `protobuf:"bytes,6,req,name=access_index,json=accessIndex" json:"access_index"`
-	AccessPartition string `protobuf:"bytes,7,req,name=access_partition,json=accessPartition" json:"access_partition"`
-	// The time spent by the current operator
-	TimeUs float64 `protobuf:"fixed64,8,req,name=time_us,json=timeUs" json:"time_us"`
-	// The current operator run at tidb/tikv/tiflash
-	RunAt string `protobuf:"bytes,9,req,name=run_at,json=runAt" json:"run_at"`
-	// The children of the current operator
-	Children         []*VisualOperator `protobuf:"bytes,10,rep,name=children" json:"children,omitempty"`
-	XXX_unrecognized []byte            `json:"-"`
+	AccessTable       string   `protobuf:"bytes,9,opt,name=access_table,json=accessTable,proto3" json:"access_table,omitempty"`
+	AccessIndex       string   `protobuf:"bytes,10,opt,name=access_index,json=accessIndex,proto3" json:"access_index,omitempty"`
+	AccessPartition   string   `protobuf:"bytes,11,opt,name=access_partition,json=accessPartition,proto3" json:"access_partition,omitempty"`
+	OperatorInfo      string   `protobuf:"bytes,12,opt,name=operator_info,json=operatorInfo,proto3" json:"operator_info,omitempty"`
+	RootBasicExecInfo string   `protobuf:"bytes,13,opt,name=root_basic_exec_info,json=rootBasicExecInfo,proto3" json:"root_basic_exec_info,omitempty"`
+	RootGroupExecInfo []string `protobuf:"bytes,14,rep,name=root_group_exec_info,json=rootGroupExecInfo" json:"root_group_exec_info,omitempty"`
+	CopExecInfo       string   `protobuf:"bytes,15,opt,name=cop_exec_info,json=copExecInfo,proto3" json:"cop_exec_info,omitempty"`
+	MemoryBytes       int64    `protobuf:"varint,16,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"`
+	DiskBytes         int64    `protobuf:"varint,17,opt,name=disk_bytes,json=diskBytes,proto3" json:"disk_bytes,omitempty"`
 }
 
 func (m *VisualOperator) Reset()                    { *m = VisualOperator{} }
@@ -82,11 +167,25 @@ func (m *VisualOperator) String() string            { return proto.CompactTextSt
 func (*VisualOperator) ProtoMessage()               {}
 func (*VisualOperator) Descriptor() ([]byte, []int) { return fileDescriptorVisualPlan, []int{1} }
 
+func (m *VisualOperator) GetChildren() []*VisualOperator {
+	if m != nil {
+		return m.Children
+	}
+	return nil
+}
+
 func (m *VisualOperator) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
+}
+
+func (m *VisualOperator) GetDriverSide() DriverSide {
+	if m != nil {
+		return m.DriverSide
+	}
+	return DriverSide_empty
 }
 
 func (m *VisualOperator) GetCost() float64 {
@@ -110,6 +209,20 @@ func (m *VisualOperator) GetActRows() uint64 {
 	return 0
 }
 
+func (m *VisualOperator) GetTaskType() TaskType {
+	if m != nil {
+		return m.TaskType
+	}
+	return TaskType_unknown
+}
+
+func (m *VisualOperator) GetStoreType() StoreType {
+	if m != nil {
+		return m.StoreType
+	}
+	return StoreType_unspecified
+}
+
 func (m *VisualOperator) GetAccessTable() string {
 	if m != nil {
 		return m.AccessTable
@@ -131,30 +244,54 @@ func (m *VisualOperator) GetAccessPartition() string {
 	return ""
 }
 
-func (m *VisualOperator) GetTimeUs() float64 {
+func (m *VisualOperator) GetOperatorInfo() string {
 	if m != nil {
-		return m.TimeUs
-	}
-	return 0
-}
-
-func (m *VisualOperator) GetRunAt() string {
-	if m != nil {
-		return m.RunAt
+		return m.OperatorInfo
 	}
 	return ""
 }
 
-func (m *VisualOperator) GetChildren() []*VisualOperator {
+func (m *VisualOperator) GetRootBasicExecInfo() string {
 	if m != nil {
-		return m.Children
+		return m.RootBasicExecInfo
+	}
+	return ""
+}
+
+func (m *VisualOperator) GetRootGroupExecInfo() []string {
+	if m != nil {
+		return m.RootGroupExecInfo
 	}
 	return nil
+}
+
+func (m *VisualOperator) GetCopExecInfo() string {
+	if m != nil {
+		return m.CopExecInfo
+	}
+	return ""
+}
+
+func (m *VisualOperator) GetMemoryBytes() int64 {
+	if m != nil {
+		return m.MemoryBytes
+	}
+	return 0
+}
+
+func (m *VisualOperator) GetDiskBytes() int64 {
+	if m != nil {
+		return m.DiskBytes
+	}
+	return 0
 }
 
 func init() {
 	proto.RegisterType((*VisualData)(nil), "tipb.VisualData")
 	proto.RegisterType((*VisualOperator)(nil), "tipb.VisualOperator")
+	proto.RegisterEnum("tipb.TaskType", TaskType_name, TaskType_value)
+	proto.RegisterEnum("tipb.StoreType", StoreType_name, StoreType_value)
+	proto.RegisterEnum("tipb.DriverSide", DriverSide_name, DriverSide_value)
 }
 func (m *VisualData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -171,9 +308,7 @@ func (m *VisualData) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Main == nil {
-		return 0, new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	} else {
+	if m.Main != nil {
 		dAtA[i] = 0xa
 		i++
 		i = encodeVarintVisualPlan(dAtA, i, uint64(m.Main.Size()))
@@ -195,16 +330,15 @@ func (m *VisualData) MarshalTo(dAtA []byte) (int, error) {
 			i += n
 		}
 	}
-	dAtA[i] = 0x18
-	i++
 	if m.WithRuntimeStats {
-		dAtA[i] = 1
-	} else {
-		dAtA[i] = 0
-	}
-	i++
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+		dAtA[i] = 0x18
+		i++
+		if m.WithRuntimeStats {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i++
 	}
 	return i, nil
 }
@@ -224,44 +358,9 @@ func (m *VisualOperator) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	dAtA[i] = 0xa
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.Name)))
-	i += copy(dAtA[i:], m.Name)
-	dAtA[i] = 0x11
-	i++
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Cost))))
-	i += 8
-	dAtA[i] = 0x19
-	i++
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.EstRows))))
-	i += 8
-	dAtA[i] = 0x20
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(m.ActRows))
-	dAtA[i] = 0x2a
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessTable)))
-	i += copy(dAtA[i:], m.AccessTable)
-	dAtA[i] = 0x32
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessIndex)))
-	i += copy(dAtA[i:], m.AccessIndex)
-	dAtA[i] = 0x3a
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessPartition)))
-	i += copy(dAtA[i:], m.AccessPartition)
-	dAtA[i] = 0x41
-	i++
-	encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.TimeUs))))
-	i += 8
-	dAtA[i] = 0x4a
-	i++
-	i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.RunAt)))
-	i += copy(dAtA[i:], m.RunAt)
 	if len(m.Children) > 0 {
 		for _, msg := range m.Children {
-			dAtA[i] = 0x52
+			dAtA[i] = 0xa
 			i++
 			i = encodeVarintVisualPlan(dAtA, i, uint64(msg.Size()))
 			n, err := msg.MarshalTo(dAtA[i:])
@@ -271,8 +370,108 @@ func (m *VisualOperator) MarshalTo(dAtA []byte) (int, error) {
 			i += n
 		}
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Name) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.Name)))
+		i += copy(dAtA[i:], m.Name)
+	}
+	if m.DriverSide != 0 {
+		dAtA[i] = 0x18
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.DriverSide))
+	}
+	if m.Cost != 0 {
+		dAtA[i] = 0x21
+		i++
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.Cost))))
+		i += 8
+	}
+	if m.EstRows != 0 {
+		dAtA[i] = 0x29
+		i++
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(m.EstRows))))
+		i += 8
+	}
+	if m.ActRows != 0 {
+		dAtA[i] = 0x30
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.ActRows))
+	}
+	if m.TaskType != 0 {
+		dAtA[i] = 0x38
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.TaskType))
+	}
+	if m.StoreType != 0 {
+		dAtA[i] = 0x40
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.StoreType))
+	}
+	if len(m.AccessTable) > 0 {
+		dAtA[i] = 0x4a
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessTable)))
+		i += copy(dAtA[i:], m.AccessTable)
+	}
+	if len(m.AccessIndex) > 0 {
+		dAtA[i] = 0x52
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessIndex)))
+		i += copy(dAtA[i:], m.AccessIndex)
+	}
+	if len(m.AccessPartition) > 0 {
+		dAtA[i] = 0x5a
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.AccessPartition)))
+		i += copy(dAtA[i:], m.AccessPartition)
+	}
+	if len(m.OperatorInfo) > 0 {
+		dAtA[i] = 0x62
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.OperatorInfo)))
+		i += copy(dAtA[i:], m.OperatorInfo)
+	}
+	if len(m.RootBasicExecInfo) > 0 {
+		dAtA[i] = 0x6a
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.RootBasicExecInfo)))
+		i += copy(dAtA[i:], m.RootBasicExecInfo)
+	}
+	if len(m.RootGroupExecInfo) > 0 {
+		for _, s := range m.RootGroupExecInfo {
+			dAtA[i] = 0x72
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if len(m.CopExecInfo) > 0 {
+		dAtA[i] = 0x7a
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(len(m.CopExecInfo)))
+		i += copy(dAtA[i:], m.CopExecInfo)
+	}
+	if m.MemoryBytes != 0 {
+		dAtA[i] = 0x80
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.MemoryBytes))
+	}
+	if m.DiskBytes != 0 {
+		dAtA[i] = 0x88
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintVisualPlan(dAtA, i, uint64(m.DiskBytes))
 	}
 	return i, nil
 }
@@ -299,9 +498,8 @@ func (m *VisualData) Size() (n int) {
 			n += 1 + l + sovVisualPlan(uint64(l))
 		}
 	}
-	n += 2
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
+	if m.WithRuntimeStats {
+		n += 2
 	}
 	return n
 }
@@ -309,28 +507,69 @@ func (m *VisualData) Size() (n int) {
 func (m *VisualOperator) Size() (n int) {
 	var l int
 	_ = l
-	l = len(m.Name)
-	n += 1 + l + sovVisualPlan(uint64(l))
-	n += 9
-	n += 9
-	n += 1 + sovVisualPlan(uint64(m.ActRows))
-	l = len(m.AccessTable)
-	n += 1 + l + sovVisualPlan(uint64(l))
-	l = len(m.AccessIndex)
-	n += 1 + l + sovVisualPlan(uint64(l))
-	l = len(m.AccessPartition)
-	n += 1 + l + sovVisualPlan(uint64(l))
-	n += 9
-	l = len(m.RunAt)
-	n += 1 + l + sovVisualPlan(uint64(l))
 	if len(m.Children) > 0 {
 		for _, e := range m.Children {
 			l = e.Size()
 			n += 1 + l + sovVisualPlan(uint64(l))
 		}
 	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	if m.DriverSide != 0 {
+		n += 1 + sovVisualPlan(uint64(m.DriverSide))
+	}
+	if m.Cost != 0 {
+		n += 9
+	}
+	if m.EstRows != 0 {
+		n += 9
+	}
+	if m.ActRows != 0 {
+		n += 1 + sovVisualPlan(uint64(m.ActRows))
+	}
+	if m.TaskType != 0 {
+		n += 1 + sovVisualPlan(uint64(m.TaskType))
+	}
+	if m.StoreType != 0 {
+		n += 1 + sovVisualPlan(uint64(m.StoreType))
+	}
+	l = len(m.AccessTable)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	l = len(m.AccessIndex)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	l = len(m.AccessPartition)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	l = len(m.OperatorInfo)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	l = len(m.RootBasicExecInfo)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	if len(m.RootGroupExecInfo) > 0 {
+		for _, s := range m.RootGroupExecInfo {
+			l = len(s)
+			n += 1 + l + sovVisualPlan(uint64(l))
+		}
+	}
+	l = len(m.CopExecInfo)
+	if l > 0 {
+		n += 1 + l + sovVisualPlan(uint64(l))
+	}
+	if m.MemoryBytes != 0 {
+		n += 2 + sovVisualPlan(uint64(m.MemoryBytes))
+	}
+	if m.DiskBytes != 0 {
+		n += 2 + sovVisualPlan(uint64(m.DiskBytes))
 	}
 	return n
 }
@@ -349,7 +588,6 @@ func sozVisualPlan(x uint64) (n int) {
 	return sovVisualPlan(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
 func (m *VisualData) Unmarshal(dAtA []byte) error {
-	var hasFields [1]uint64
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -411,7 +649,6 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000001)
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Ctes", wireType)
@@ -463,7 +700,6 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.WithRuntimeStats = bool(v != 0)
-			hasFields[0] |= uint64(0x00000002)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipVisualPlan(dAtA[iNdEx:])
@@ -476,15 +712,8 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
-	}
-	if hasFields[0]&uint64(0x00000001) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000002) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
 	}
 
 	if iNdEx > l {
@@ -493,7 +722,6 @@ func (m *VisualData) Unmarshal(dAtA []byte) error {
 	return nil
 }
 func (m *VisualOperator) Unmarshal(dAtA []byte) error {
-	var hasFields [1]uint64
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -524,212 +752,6 @@ func (m *VisualOperator) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVisualPlan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000001)
-		case 2:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cost", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.Cost = float64(math.Float64frombits(v))
-			hasFields[0] |= uint64(0x00000002)
-		case 3:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EstRows", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.EstRows = float64(math.Float64frombits(v))
-			hasFields[0] |= uint64(0x00000004)
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActRows", wireType)
-			}
-			m.ActRows = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ActRows |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			hasFields[0] |= uint64(0x00000008)
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccessTable", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVisualPlan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AccessTable = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000010)
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccessIndex", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVisualPlan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AccessIndex = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000020)
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccessPartition", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVisualPlan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AccessPartition = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000040)
-		case 8:
-			if wireType != 1 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TimeUs", wireType)
-			}
-			var v uint64
-			if (iNdEx + 8) > l {
-				return io.ErrUnexpectedEOF
-			}
-			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-			iNdEx += 8
-			m.TimeUs = float64(math.Float64frombits(v))
-			hasFields[0] |= uint64(0x00000080)
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RunAt", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVisualPlan
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthVisualPlan
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.RunAt = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-			hasFields[0] |= uint64(0x00000100)
-		case 10:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Children", wireType)
 			}
 			var msglen int
@@ -759,6 +781,374 @@ func (m *VisualOperator) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DriverSide", wireType)
+			}
+			m.DriverSide = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DriverSide |= (DriverSide(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cost", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.Cost = float64(math.Float64frombits(v))
+		case 5:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EstRows", wireType)
+			}
+			var v uint64
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+			m.EstRows = float64(math.Float64frombits(v))
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ActRows", wireType)
+			}
+			m.ActRows = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ActRows |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TaskType", wireType)
+			}
+			m.TaskType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TaskType |= (TaskType(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StoreType", wireType)
+			}
+			m.StoreType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.StoreType |= (StoreType(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessTable", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessTable = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessIndex", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessIndex = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessPartition", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessPartition = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorInfo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatorInfo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RootBasicExecInfo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RootBasicExecInfo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RootGroupExecInfo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RootGroupExecInfo = append(m.RootGroupExecInfo, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CopExecInfo", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthVisualPlan
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CopExecInfo = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MemoryBytes", wireType)
+			}
+			m.MemoryBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MemoryBytes |= (int64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 17:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DiskBytes", wireType)
+			}
+			m.DiskBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowVisualPlan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DiskBytes |= (int64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipVisualPlan(dAtA[iNdEx:])
@@ -771,36 +1161,8 @@ func (m *VisualOperator) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
-	}
-	if hasFields[0]&uint64(0x00000001) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000002) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000004) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000008) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000010) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000020) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000040) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000080) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
-	}
-	if hasFields[0]&uint64(0x00000100) == 0 {
-		return new(github_com_golang_protobuf_proto.RequiredNotSetError)
 	}
 
 	if iNdEx > l {
@@ -916,29 +1278,46 @@ var (
 func init() { proto.RegisterFile("visual_plan.proto", fileDescriptorVisualPlan) }
 
 var fileDescriptorVisualPlan = []byte{
-	// 377 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xc1, 0x6e, 0xda, 0x30,
-	0x18, 0xc7, 0x49, 0x08, 0x10, 0xcc, 0xb4, 0x31, 0x8b, 0x49, 0xd6, 0xa6, 0x85, 0x88, 0xcb, 0xb2,
-	0x4b, 0x98, 0x78, 0x83, 0xa1, 0x5d, 0x76, 0x1a, 0xca, 0xda, 0x5e, 0x23, 0x63, 0x2c, 0xb0, 0x94,
-	0xd8, 0x91, 0xfd, 0xa5, 0xf4, 0x41, 0x7a, 0xe8, 0x23, 0x71, 0xec, 0x13, 0x54, 0x15, 0x7d, 0x88,
-	0x5e, 0x2b, 0x27, 0xa4, 0x4a, 0x55, 0xb5, 0xb7, 0xe8, 0xff, 0xfb, 0x7d, 0xff, 0x2f, 0xb6, 0xd1,
-	0xe7, 0x4b, 0x61, 0x4a, 0x9a, 0xa5, 0x45, 0x46, 0x65, 0x5c, 0x68, 0x05, 0x0a, 0x7b, 0x20, 0x8a,
-	0xf5, 0xd7, 0xc9, 0x56, 0x6d, 0x55, 0x15, 0xcc, 0xed, 0x57, 0xcd, 0x66, 0xd7, 0x0e, 0x42, 0x17,
-	0xd5, 0xc4, 0x1f, 0x0a, 0x14, 0x47, 0xc8, 0xcb, 0xa9, 0x90, 0xc4, 0x09, 0xdd, 0x68, 0xb4, 0x98,
-	0xc4, 0x76, 0x32, 0xae, 0xf9, 0xbf, 0x82, 0x6b, 0x0a, 0x4a, 0x27, 0x95, 0x61, 0x4d, 0x06, 0xdc,
-	0x10, 0x37, 0xec, 0xbe, 0x6d, 0x5a, 0x03, 0x2f, 0x10, 0xde, 0x0b, 0xd8, 0xa5, 0xba, 0x94, 0x20,
-	0x72, 0x9e, 0x1a, 0xa0, 0x60, 0x48, 0x37, 0x74, 0x23, 0x7f, 0xe9, 0x1d, 0xee, 0xa6, 0x9d, 0x64,
-	0x6c, 0x79, 0x52, 0xe3, 0xff, 0x96, 0xce, 0x1e, 0x5d, 0xf4, 0xf1, 0x65, 0x19, 0x26, 0xc8, 0x93,
-	0x34, 0xe7, 0xd5, 0xaf, 0x0d, 0x4f, 0x83, 0x55, 0x62, 0x09, 0x53, 0x06, 0x88, 0x1b, 0xba, 0x91,
-	0xd3, 0x10, 0x9b, 0xe0, 0x29, 0xf2, 0xb9, 0x81, 0x54, 0xab, 0x7d, 0xbd, 0xb0, 0xa1, 0x03, 0x6e,
-	0x20, 0x51, 0x7b, 0x63, 0x05, 0xca, 0x4e, 0x82, 0x17, 0xba, 0x91, 0xd7, 0x08, 0x94, 0xd5, 0xc2,
-	0x0f, 0xf4, 0x81, 0x32, 0xc6, 0x8d, 0x49, 0x81, 0xae, 0x33, 0x4e, 0x7a, 0xad, 0xed, 0xa3, 0x9a,
-	0x9c, 0x59, 0xd0, 0x12, 0x85, 0xdc, 0xf0, 0x2b, 0xd2, 0x7f, 0x2d, 0xfe, 0xb5, 0x00, 0xcf, 0xd1,
-	0xf8, 0x24, 0x16, 0x54, 0x83, 0x00, 0xa1, 0x24, 0x19, 0xb4, 0xe4, 0x4f, 0x35, 0x5d, 0x35, 0x10,
-	0x7f, 0x47, 0x83, 0xea, 0xde, 0x4a, 0x43, 0xfc, 0xd6, 0x19, 0xfa, 0x36, 0x3c, 0x37, 0xf8, 0x1b,
-	0xea, 0xeb, 0x52, 0xa6, 0x14, 0xc8, 0xb0, 0xd5, 0xd2, 0xd3, 0xa5, 0xfc, 0x0d, 0xf8, 0x17, 0xf2,
-	0xd9, 0x4e, 0x64, 0x1b, 0xcd, 0x25, 0x41, 0xef, 0xbc, 0xd4, 0xb3, 0xb5, 0xfc, 0x79, 0x38, 0x06,
-	0xce, 0xed, 0x31, 0x70, 0xee, 0x8f, 0x81, 0x73, 0xf3, 0x10, 0x74, 0xd0, 0x17, 0xa6, 0xf2, 0xb8,
-	0x10, 0x72, 0xcb, 0x68, 0x11, 0x83, 0xd8, 0xac, 0xab, 0x86, 0x95, 0xf3, 0x14, 0x00, 0x00, 0xff,
-	0xff, 0x98, 0xd4, 0x93, 0x91, 0x6b, 0x02, 0x00, 0x00,
+	// 650 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x94, 0xcd, 0x6e, 0xeb, 0x36,
+	0x10, 0x85, 0x43, 0x4b, 0x89, 0xa5, 0xf1, 0x1f, 0x43, 0xa4, 0x80, 0x5a, 0xa0, 0x86, 0x92, 0x6e,
+	0x9c, 0xb4, 0x70, 0xda, 0x74, 0xdd, 0x45, 0xd3, 0xb4, 0x45, 0x56, 0x0d, 0x94, 0xa0, 0x5b, 0x81,
+	0xa2, 0x68, 0x9b, 0xb0, 0x25, 0x12, 0x24, 0x6d, 0xc7, 0x2f, 0x91, 0x75, 0x1f, 0xa9, 0xcb, 0xfb,
+	0x08, 0x17, 0xb9, 0x2f, 0x72, 0x41, 0xca, 0x76, 0x9c, 0x45, 0x76, 0x07, 0xe7, 0x7c, 0x33, 0x43,
+	0x8a, 0x03, 0xc1, 0xe9, 0x4a, 0x98, 0x25, 0x5d, 0xe4, 0x6a, 0x41, 0xeb, 0xb1, 0xd2, 0xd2, 0x4a,
+	0x12, 0x5a, 0xa1, 0x8a, 0xef, 0xce, 0xa6, 0x72, 0x2a, 0xbd, 0x71, 0xed, 0x54, 0x93, 0x5d, 0xbc,
+	0x20, 0x80, 0x7f, 0x7d, 0xc5, 0x1d, 0xb5, 0x94, 0x8c, 0x20, 0xac, 0xa8, 0xa8, 0x13, 0x94, 0xa2,
+	0x51, 0xe7, 0xe6, 0x6c, 0xec, 0x2a, 0xc7, 0x4d, 0xfe, 0x8f, 0xe2, 0x9a, 0x5a, 0xa9, 0x33, 0x4f,
+	0x38, 0x92, 0x59, 0x6e, 0x92, 0x56, 0x1a, 0x7c, 0x4c, 0x3a, 0x82, 0xfc, 0x04, 0x64, 0x2d, 0xec,
+	0x2c, 0xd7, 0xcb, 0xda, 0x8a, 0x8a, 0xe7, 0xc6, 0x52, 0x6b, 0x92, 0x20, 0x45, 0xa3, 0x28, 0xc3,
+	0x2e, 0xc9, 0x9a, 0xe0, 0xd1, 0xf9, 0x17, 0x2f, 0xc7, 0xd0, 0x7f, 0xdf, 0x86, 0xfc, 0x0c, 0x11,
+	0x9b, 0x89, 0x45, 0xa9, 0xb9, 0x3b, 0xd8, 0xc7, 0xe3, 0xf6, 0x14, 0x21, 0x10, 0xd6, 0xb4, 0xe2,
+	0x49, 0x2b, 0x45, 0xa3, 0x38, 0xf3, 0x9a, 0xfc, 0x02, 0x9d, 0x52, 0x8b, 0x15, 0xd7, 0xb9, 0x11,
+	0x25, 0xf7, 0xf3, 0xfb, 0x37, 0xb8, 0x69, 0x74, 0xe7, 0x83, 0x47, 0x51, 0xf2, 0x0c, 0xca, 0xbd,
+	0x76, 0x6d, 0x98, 0x34, 0x36, 0x09, 0x53, 0x34, 0x42, 0x99, 0xd7, 0xe4, 0x5b, 0x88, 0xb8, 0xb1,
+	0xb9, 0x96, 0x6b, 0x93, 0x1c, 0x7b, 0xbf, 0xcd, 0x8d, 0xcd, 0xe4, 0xda, 0xb8, 0x88, 0xb2, 0x6d,
+	0x74, 0x92, 0xa2, 0x51, 0x98, 0xb5, 0x29, 0x6b, 0xa2, 0x1f, 0x21, 0xb6, 0xd4, 0xcc, 0x73, 0xbb,
+	0x51, 0x3c, 0x69, 0xfb, 0xd1, 0xfd, 0x66, 0xf4, 0x13, 0x35, 0xf3, 0xa7, 0x8d, 0xe2, 0x59, 0x64,
+	0xb7, 0x8a, 0x8c, 0x01, 0x8c, 0x95, 0x9a, 0x37, 0x74, 0xe4, 0xe9, 0x41, 0x43, 0x3f, 0x3a, 0xdf,
+	0xe3, 0xb1, 0xd9, 0x49, 0x72, 0x0e, 0x5d, 0xca, 0x18, 0x37, 0x26, 0xb7, 0xb4, 0x58, 0xf0, 0x24,
+	0xf6, 0xb7, 0xee, 0x34, 0xde, 0x93, 0xb3, 0x0e, 0x10, 0x51, 0x97, 0xfc, 0x39, 0x81, 0x43, 0xe4,
+	0xde, 0x59, 0xe4, 0x12, 0xf0, 0x16, 0x51, 0x54, 0x5b, 0x61, 0x85, 0xac, 0x93, 0x8e, 0xc7, 0x06,
+	0x8d, 0xff, 0xb0, 0xb3, 0xc9, 0x0f, 0xd0, 0x93, 0xdb, 0x8f, 0x9e, 0x8b, 0x7a, 0x22, 0x93, 0xae,
+	0xe7, 0xba, 0x3b, 0xf3, 0xbe, 0x9e, 0x48, 0x72, 0x0d, 0x67, 0x5a, 0x4a, 0x9b, 0x17, 0xd4, 0x08,
+	0x96, 0xf3, 0x67, 0xce, 0x1a, 0xb6, 0xe7, 0xd9, 0x53, 0x97, 0xdd, 0xba, 0xe8, 0xcf, 0x67, 0xce,
+	0xde, 0x15, 0x4c, 0xb5, 0x5c, 0xaa, 0x83, 0x82, 0x7e, 0x1a, 0xec, 0x0a, 0xfe, 0x76, 0xd1, 0xbe,
+	0xe0, 0x02, 0x7a, 0x4c, 0x1e, 0x92, 0x83, 0xe6, 0x56, 0x4c, 0xbe, 0x31, 0xe7, 0xd0, 0xad, 0x78,
+	0x25, 0xf5, 0x26, 0x2f, 0x36, 0x6e, 0x5d, 0x71, 0x8a, 0x46, 0x41, 0xd6, 0x69, 0xbc, 0x5b, 0x67,
+	0x91, 0xef, 0x01, 0x4a, 0x61, 0xe6, 0x5b, 0xe0, 0xd4, 0x03, 0xb1, 0x73, 0x7c, 0x7c, 0xf5, 0x3b,
+	0x44, 0xbb, 0x37, 0x22, 0x1d, 0x68, 0x2f, 0xeb, 0x79, 0x2d, 0xd7, 0x35, 0x3e, 0x22, 0x11, 0x84,
+	0xee, 0x4c, 0x18, 0x91, 0x36, 0x04, 0x4c, 0x2a, 0xdc, 0x22, 0x5d, 0x88, 0x0a, 0x6a, 0xd9, 0xec,
+	0x0f, 0xa9, 0x70, 0xe0, 0xec, 0x4a, 0x29, 0x1c, 0x5e, 0xfd, 0x06, 0xf1, 0xfe, 0xe1, 0xc8, 0x00,
+	0x3a, 0xcb, 0xda, 0x28, 0xce, 0xc4, 0x44, 0xf0, 0xb2, 0xe9, 0x63, 0x45, 0x59, 0x60, 0xd4, 0xa8,
+	0xf9, 0x0a, 0xb7, 0xdc, 0x20, 0x2b, 0x26, 0x0b, 0x6a, 0x66, 0x38, 0xb8, 0xfa, 0x0b, 0xe0, 0x6d,
+	0x41, 0x49, 0x0c, 0xc7, 0xbc, 0x52, 0x76, 0x83, 0x8f, 0x9c, 0x2c, 0x96, 0x62, 0x51, 0x62, 0xe4,
+	0xa4, 0xd2, 0xb2, 0xe0, 0xb8, 0xe5, 0xba, 0x18, 0xce, 0x4b, 0x1c, 0x90, 0x1e, 0xc4, 0x9a, 0xb3,
+	0xa5, 0x36, 0x62, 0xc5, 0x71, 0x78, 0x7b, 0xf9, 0xff, 0xeb, 0x10, 0x7d, 0x7a, 0x1d, 0xa2, 0xcf,
+	0xaf, 0x43, 0xf4, 0xdf, 0x97, 0xe1, 0x11, 0x7c, 0xc3, 0x64, 0x35, 0x56, 0xa2, 0x9e, 0x32, 0xaa,
+	0xc6, 0xee, 0x10, 0x7e, 0xcb, 0x1e, 0x50, 0x71, 0xe2, 0xff, 0x0e, 0xbf, 0x7e, 0x0d, 0x00, 0x00,
+	0xff, 0xff, 0xb4, 0x9f, 0xd7, 0x39, 0x4e, 0x04, 0x00, 0x00,
 }

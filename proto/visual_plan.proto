@@ -1,4 +1,4 @@
-syntax = "proto2";
+syntax = "proto3";
 
 package tipb;
 
@@ -13,31 +13,62 @@ option (gogoproto.unmarshaler_all) = true;
 
 
 message VisualData {
-    required VisualOperator main = 1;
+    VisualOperator main = 1;
     repeated VisualOperator ctes = 2;
-    required bool with_runtime_stats = 3 [(gogoproto.nullable) = false];
+    bool with_runtime_stats = 3;
 }
 
 message VisualOperator {
+    // The children of the current operator
+    repeated VisualOperator children = 1;
     // the name of the current operator
-    required string name = 1 [(gogoproto.nullable) = false];
+    string name = 2;
+    DriverSide driver_side = 3;
+
     // the cost of the current operator
     // runtime stats available: cost means real cost
     // runtime stats unavailable: cost means est_cost
-    required double cost = 2 [(gogoproto.nullable) = false];
+    double cost = 4;
 
-    required double est_rows = 3 [(gogoproto.nullable) = false];
-    required uint64 act_rows = 4 [(gogoproto.nullable) = false];
+    double est_rows = 5;
+    uint64 act_rows = 6;
+
+    TaskType task_type = 7;
+    StoreType store_type = 8;
 
     // The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
-    required string access_table = 5 [(gogoproto.nullable) = false];
-    required string access_index = 6 [(gogoproto.nullable) = false];
-    required string access_partition = 7 [(gogoproto.nullable) = false];
+    string access_table = 9;
+    string access_index = 10;
+    string access_partition = 11;
 
-    // The time spent by the current operator 
-    required double time_us = 8 [(gogoproto.nullable) = false];
-    // The current operator run at tidb/tikv/tiflash
-    required string run_at = 9 [(gogoproto.nullable) = false];
-    // The children of the current operator
-    repeated VisualOperator children = 10;
+    string operator_info = 12;
+    string root_basic_exec_info = 13;
+    repeated string root_group_exec_info = 14;
+    string cop_exec_info = 15;
+
+    int64 memory_bytes = 16;
+    int64 disk_bytes = 17;
+}
+
+enum TaskType {
+    unknown = 0;
+    root = 1;
+    cop = 2;
+    batchCop = 3;
+    mpp = 4;
+}
+
+enum StoreType {
+    unspecified = 0;
+    tidb = 1;
+    tikv = 2;
+    tiflash =3;
+}
+
+enum DriverSide {
+    empty = 0;
+    build = 1;
+    probe = 2;
+    seed = 3;
+    recursive = 4;
 }
