@@ -17,6 +17,9 @@ message ExplainData {
     repeated ExplainOperator ctes = 2;
     // If runtime stats are not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
     bool with_runtime_stats = 3;
+    // If this field is true. The main and ctes fields should be empty and should not be used.
+    // This field can be changed to a enum or int if we need to represent more states in the future.
+    bool discarded_due_to_too_long = 4;
 }
 
 message ExplainOperator {
