@@ -12,22 +12,22 @@ option (gogoproto.sizer_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 
 
-message VisualData {
-    VisualOperator main = 1;
-    repeated VisualOperator ctes = 2;
+message ExplainData {
+    ExplainOperator main = 1;
+    repeated ExplainOperator ctes = 2;
+    // If runtime stats are not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
     bool with_runtime_stats = 3;
 }
 
-message VisualOperator {
-    // The children of the current operator
-    repeated VisualOperator children = 1;
-    // the name of the current operator
-    string name = 2;
+message ExplainOperator {
+    string name = 1;
+    repeated ExplainOperator children = 2;
+
     DriverSide driver_side = 3;
 
     // the cost of the current operator
-    // runtime stats available: cost means real cost
-    // runtime stats unavailable: cost means est_cost
+    // runtime stats available: cost is re-calculated using actual row count
+    // runtime stats unavailable: cost is estimated
     double cost = 4;
 
     double est_rows = 5;
@@ -37,17 +37,21 @@ message VisualOperator {
     StoreType store_type = 8;
 
     // The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
-    string access_table = 9;
-    string access_index = 10;
-    string access_partition = 11;
+    repeated AccessObject access_objects = 9;
 
-    string operator_info = 12;
-    string root_basic_exec_info = 13;
-    repeated string root_group_exec_info = 14;
-    string cop_exec_info = 15;
+    string operator_info = 10;
+    string root_basic_exec_info = 11;
+    repeated string root_group_exec_info = 12;
+    string cop_exec_info = 13;
 
-    int64 memory_bytes = 16;
-    int64 disk_bytes = 17;
+    int64 memory_bytes = 14;
+    int64 disk_bytes = 15;
+}
+
+message AccessObject {
+    string table = 1;
+    string index = 2;
+    string partition = 3;
 }
 
 enum TaskType {

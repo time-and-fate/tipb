@@ -8,6 +8,7 @@
 		analyze.proto
 		checksum.proto
 		executor.proto
+		explain.proto
 		expression.proto
 		metadata.proto
 		resourcetag.proto
@@ -15,7 +16,6 @@
 		select.proto
 		topsql_agent.proto
 		trace.proto
-		visual_plan.proto
 
 	It has these top-level messages:
 		AnalyzeReq
@@ -55,6 +55,9 @@
 		WindowFrameBound
 		WindowFrame
 		Window
+		ExplainData
+		ExplainOperator
+		AccessObject
 		FieldType
 		Expr
 		RpnExpr
@@ -82,8 +85,6 @@
 		EmptyResponse
 		TopSQLSubRequest
 		TopSQLSubResponse
-		VisualData
-		VisualOperator
 */
 package tipb
 
