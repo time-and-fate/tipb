@@ -62,7 +62,7 @@ message DynamicPartitionAccessObjects {
 message DynamicPartitionAccessObject {
     string database = 1;
     string table = 2;
-    bool all_partition = 3;
+    bool all_partitions = 3;
     repeated string partitions = 4;
 }
 
