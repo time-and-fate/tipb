@@ -160,19 +160,51 @@ type ExplainOperator struct {
 	TaskType  TaskType  `protobuf:"varint,7,opt,name=task_type,json=taskType,proto3,enum=tipb.TaskType" json:"task_type,omitempty"`
 	StoreType StoreType `protobuf:"varint,8,opt,name=store_type,json=storeType,proto3,enum=tipb.StoreType" json:"store_type,omitempty"`
 	// The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
-	AccessObjects     []*AccessObject `protobuf:"bytes,9,rep,name=access_objects,json=accessObjects" json:"access_objects,omitempty"`
-	OperatorInfo      string          `protobuf:"bytes,10,opt,name=operator_info,json=operatorInfo,proto3" json:"operator_info,omitempty"`
-	RootBasicExecInfo string          `protobuf:"bytes,11,opt,name=root_basic_exec_info,json=rootBasicExecInfo,proto3" json:"root_basic_exec_info,omitempty"`
-	RootGroupExecInfo []string        `protobuf:"bytes,12,rep,name=root_group_exec_info,json=rootGroupExecInfo" json:"root_group_exec_info,omitempty"`
-	CopExecInfo       string          `protobuf:"bytes,13,opt,name=cop_exec_info,json=copExecInfo,proto3" json:"cop_exec_info,omitempty"`
-	MemoryBytes       int64           `protobuf:"varint,14,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"`
-	DiskBytes         int64           `protobuf:"varint,15,opt,name=disk_bytes,json=diskBytes,proto3" json:"disk_bytes,omitempty"`
+	//
+	// Types that are valid to be assigned to AccessObject:
+	//	*ExplainOperator_ScanObject
+	//	*ExplainOperator_DynamicPartitionObjects
+	//	*ExplainOperator_OtherObject
+	AccessObject      isExplainOperator_AccessObject `protobuf_oneof:"access_object"`
+	OperatorInfo      string                         `protobuf:"bytes,12,opt,name=operator_info,json=operatorInfo,proto3" json:"operator_info,omitempty"`
+	RootBasicExecInfo string                         `protobuf:"bytes,13,opt,name=root_basic_exec_info,json=rootBasicExecInfo,proto3" json:"root_basic_exec_info,omitempty"`
+	RootGroupExecInfo []string                       `protobuf:"bytes,14,rep,name=root_group_exec_info,json=rootGroupExecInfo" json:"root_group_exec_info,omitempty"`
+	CopExecInfo       string                         `protobuf:"bytes,15,opt,name=cop_exec_info,json=copExecInfo,proto3" json:"cop_exec_info,omitempty"`
+	MemoryBytes       int64                          `protobuf:"varint,16,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"`
+	DiskBytes         int64                          `protobuf:"varint,17,opt,name=disk_bytes,json=diskBytes,proto3" json:"disk_bytes,omitempty"`
 }
 
 func (m *ExplainOperator) Reset()                    { *m = ExplainOperator{} }
 func (m *ExplainOperator) String() string            { return proto.CompactTextString(m) }
 func (*ExplainOperator) ProtoMessage()               {}
 func (*ExplainOperator) Descriptor() ([]byte, []int) { return fileDescriptorExplain, []int{1} }
+
+type isExplainOperator_AccessObject interface {
+	isExplainOperator_AccessObject()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type ExplainOperator_ScanObject struct {
+	ScanObject *ScanAccessObject `protobuf:"bytes,9,opt,name=scan_object,json=scanObject,oneof"`
+}
+type ExplainOperator_DynamicPartitionObjects struct {
+	DynamicPartitionObjects *DynamicPartitionAccessObjects `protobuf:"bytes,10,opt,name=dynamic_partition_objects,json=dynamicPartitionObjects,oneof"`
+}
+type ExplainOperator_OtherObject struct {
+	OtherObject string `protobuf:"bytes,11,opt,name=other_object,json=otherObject,proto3,oneof"`
+}
+
+func (*ExplainOperator_ScanObject) isExplainOperator_AccessObject()              {}
+func (*ExplainOperator_DynamicPartitionObjects) isExplainOperator_AccessObject() {}
+func (*ExplainOperator_OtherObject) isExplainOperator_AccessObject()             {}
+
+func (m *ExplainOperator) GetAccessObject() isExplainOperator_AccessObject {
+	if m != nil {
+		return m.AccessObject
+	}
+	return nil
+}
 
 func (m *ExplainOperator) GetName() string {
 	if m != nil {
@@ -230,11 +262,25 @@ func (m *ExplainOperator) GetStoreType() StoreType {
 	return StoreType_unspecified
 }
 
-func (m *ExplainOperator) GetAccessObjects() []*AccessObject {
-	if m != nil {
-		return m.AccessObjects
+func (m *ExplainOperator) GetScanObject() *ScanAccessObject {
+	if x, ok := m.GetAccessObject().(*ExplainOperator_ScanObject); ok {
+		return x.ScanObject
 	}
 	return nil
+}
+
+func (m *ExplainOperator) GetDynamicPartitionObjects() *DynamicPartitionAccessObjects {
+	if x, ok := m.GetAccessObject().(*ExplainOperator_DynamicPartitionObjects); ok {
+		return x.DynamicPartitionObjects
+	}
+	return nil
+}
+
+func (m *ExplainOperator) GetOtherObject() string {
+	if x, ok := m.GetAccessObject().(*ExplainOperator_OtherObject); ok {
+		return x.OtherObject
+	}
+	return ""
 }
 
 func (m *ExplainOperator) GetOperatorInfo() string {
@@ -279,32 +325,205 @@ func (m *ExplainOperator) GetDiskBytes() int64 {
 	return 0
 }
 
-type AccessObject struct {
-	Table     string `protobuf:"bytes,1,opt,name=table,proto3" json:"table,omitempty"`
-	Index     string `protobuf:"bytes,2,opt,name=index,proto3" json:"index,omitempty"`
-	Partition string `protobuf:"bytes,3,opt,name=partition,proto3" json:"partition,omitempty"`
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*ExplainOperator) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _ExplainOperator_OneofMarshaler, _ExplainOperator_OneofUnmarshaler, _ExplainOperator_OneofSizer, []interface{}{
+		(*ExplainOperator_ScanObject)(nil),
+		(*ExplainOperator_DynamicPartitionObjects)(nil),
+		(*ExplainOperator_OtherObject)(nil),
+	}
 }
 
-func (m *AccessObject) Reset()                    { *m = AccessObject{} }
-func (m *AccessObject) String() string            { return proto.CompactTextString(m) }
-func (*AccessObject) ProtoMessage()               {}
-func (*AccessObject) Descriptor() ([]byte, []int) { return fileDescriptorExplain, []int{2} }
+func _ExplainOperator_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*ExplainOperator)
+	// access_object
+	switch x := m.AccessObject.(type) {
+	case *ExplainOperator_ScanObject:
+		_ = b.EncodeVarint(9<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.ScanObject); err != nil {
+			return err
+		}
+	case *ExplainOperator_DynamicPartitionObjects:
+		_ = b.EncodeVarint(10<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DynamicPartitionObjects); err != nil {
+			return err
+		}
+	case *ExplainOperator_OtherObject:
+		_ = b.EncodeVarint(11<<3 | proto.WireBytes)
+		_ = b.EncodeStringBytes(x.OtherObject)
+	case nil:
+	default:
+		return fmt.Errorf("ExplainOperator.AccessObject has unexpected type %T", x)
+	}
+	return nil
+}
 
-func (m *AccessObject) GetTable() string {
+func _ExplainOperator_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*ExplainOperator)
+	switch tag {
+	case 9: // access_object.scan_object
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(ScanAccessObject)
+		err := b.DecodeMessage(msg)
+		m.AccessObject = &ExplainOperator_ScanObject{msg}
+		return true, err
+	case 10: // access_object.dynamic_partition_objects
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DynamicPartitionAccessObjects)
+		err := b.DecodeMessage(msg)
+		m.AccessObject = &ExplainOperator_DynamicPartitionObjects{msg}
+		return true, err
+	case 11: // access_object.other_object
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeStringBytes()
+		m.AccessObject = &ExplainOperator_OtherObject{x}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _ExplainOperator_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*ExplainOperator)
+	// access_object
+	switch x := m.AccessObject.(type) {
+	case *ExplainOperator_ScanObject:
+		s := proto.Size(x.ScanObject)
+		n += proto.SizeVarint(9<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ExplainOperator_DynamicPartitionObjects:
+		s := proto.Size(x.DynamicPartitionObjects)
+		n += proto.SizeVarint(10<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ExplainOperator_OtherObject:
+		n += proto.SizeVarint(11<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.OtherObject)))
+		n += len(x.OtherObject)
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type DynamicPartitionAccessObjects struct {
+	Objects []*DynamicPartitionAccessObject `protobuf:"bytes,1,rep,name=objects" json:"objects,omitempty"`
+}
+
+func (m *DynamicPartitionAccessObjects) Reset()         { *m = DynamicPartitionAccessObjects{} }
+func (m *DynamicPartitionAccessObjects) String() string { return proto.CompactTextString(m) }
+func (*DynamicPartitionAccessObjects) ProtoMessage()    {}
+func (*DynamicPartitionAccessObjects) Descriptor() ([]byte, []int) {
+	return fileDescriptorExplain, []int{2}
+}
+
+func (m *DynamicPartitionAccessObjects) GetObjects() []*DynamicPartitionAccessObject {
+	if m != nil {
+		return m.Objects
+	}
+	return nil
+}
+
+type DynamicPartitionAccessObject struct {
+	Database     string   `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
+	Table        string   `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
+	AllPartition bool     `protobuf:"varint,3,opt,name=all_partition,json=allPartition,proto3" json:"all_partition,omitempty"`
+	Partitions   []string `protobuf:"bytes,4,rep,name=partitions" json:"partitions,omitempty"`
+}
+
+func (m *DynamicPartitionAccessObject) Reset()         { *m = DynamicPartitionAccessObject{} }
+func (m *DynamicPartitionAccessObject) String() string { return proto.CompactTextString(m) }
+func (*DynamicPartitionAccessObject) ProtoMessage()    {}
+func (*DynamicPartitionAccessObject) Descriptor() ([]byte, []int) {
+	return fileDescriptorExplain, []int{3}
+}
+
+func (m *DynamicPartitionAccessObject) GetDatabase() string {
+	if m != nil {
+		return m.Database
+	}
+	return ""
+}
+
+func (m *DynamicPartitionAccessObject) GetTable() string {
 	if m != nil {
 		return m.Table
 	}
 	return ""
 }
 
-func (m *AccessObject) GetIndex() string {
+func (m *DynamicPartitionAccessObject) GetAllPartition() bool {
+	if m != nil {
+		return m.AllPartition
+	}
+	return false
+}
+
+func (m *DynamicPartitionAccessObject) GetPartitions() []string {
+	if m != nil {
+		return m.Partitions
+	}
+	return nil
+}
+
+type ScanAccessObject struct {
+	Database         string   `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
+	Table            string   `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
+	Index            string   `protobuf:"bytes,3,opt,name=index,proto3" json:"index,omitempty"`
+	IndexCols        []string `protobuf:"bytes,4,rep,name=index_cols,json=indexCols" json:"index_cols,omitempty"`
+	IsClusteredIndex bool     `protobuf:"varint,5,opt,name=is_clustered_index,json=isClusteredIndex,proto3" json:"is_clustered_index,omitempty"`
+	Partition        string   `protobuf:"bytes,6,opt,name=partition,proto3" json:"partition,omitempty"`
+}
+
+func (m *ScanAccessObject) Reset()                    { *m = ScanAccessObject{} }
+func (m *ScanAccessObject) String() string            { return proto.CompactTextString(m) }
+func (*ScanAccessObject) ProtoMessage()               {}
+func (*ScanAccessObject) Descriptor() ([]byte, []int) { return fileDescriptorExplain, []int{4} }
+
+func (m *ScanAccessObject) GetDatabase() string {
+	if m != nil {
+		return m.Database
+	}
+	return ""
+}
+
+func (m *ScanAccessObject) GetTable() string {
+	if m != nil {
+		return m.Table
+	}
+	return ""
+}
+
+func (m *ScanAccessObject) GetIndex() string {
 	if m != nil {
 		return m.Index
 	}
 	return ""
 }
 
-func (m *AccessObject) GetPartition() string {
+func (m *ScanAccessObject) GetIndexCols() []string {
+	if m != nil {
+		return m.IndexCols
+	}
+	return nil
+}
+
+func (m *ScanAccessObject) GetIsClusteredIndex() bool {
+	if m != nil {
+		return m.IsClusteredIndex
+	}
+	return false
+}
+
+func (m *ScanAccessObject) GetPartition() string {
 	if m != nil {
 		return m.Partition
 	}
@@ -314,7 +533,9 @@ func (m *AccessObject) GetPartition() string {
 func init() {
 	proto.RegisterType((*ExplainData)(nil), "tipb.ExplainData")
 	proto.RegisterType((*ExplainOperator)(nil), "tipb.ExplainOperator")
-	proto.RegisterType((*AccessObject)(nil), "tipb.AccessObject")
+	proto.RegisterType((*DynamicPartitionAccessObjects)(nil), "tipb.DynamicPartitionAccessObjects")
+	proto.RegisterType((*DynamicPartitionAccessObject)(nil), "tipb.DynamicPartitionAccessObject")
+	proto.RegisterType((*ScanAccessObject)(nil), "tipb.ScanAccessObject")
 	proto.RegisterEnum("tipb.TaskType", TaskType_name, TaskType_value)
 	proto.RegisterEnum("tipb.StoreType", StoreType_name, StoreType_value)
 	proto.RegisterEnum("tipb.DriverSide", DriverSide_name, DriverSide_value)
@@ -444,33 +665,28 @@ func (m *ExplainOperator) MarshalTo(dAtA []byte) (int, error) {
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(m.StoreType))
 	}
-	if len(m.AccessObjects) > 0 {
-		for _, msg := range m.AccessObjects {
-			dAtA[i] = 0x4a
-			i++
-			i = encodeVarintExplain(dAtA, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(dAtA[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
+	if m.AccessObject != nil {
+		nn2, err := m.AccessObject.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
 		}
+		i += nn2
 	}
 	if len(m.OperatorInfo) > 0 {
-		dAtA[i] = 0x52
+		dAtA[i] = 0x62
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.OperatorInfo)))
 		i += copy(dAtA[i:], m.OperatorInfo)
 	}
 	if len(m.RootBasicExecInfo) > 0 {
-		dAtA[i] = 0x5a
+		dAtA[i] = 0x6a
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.RootBasicExecInfo)))
 		i += copy(dAtA[i:], m.RootBasicExecInfo)
 	}
 	if len(m.RootGroupExecInfo) > 0 {
 		for _, s := range m.RootGroupExecInfo {
-			dAtA[i] = 0x62
+			dAtA[i] = 0x72
 			i++
 			l = len(s)
 			for l >= 1<<7 {
@@ -484,25 +700,65 @@ func (m *ExplainOperator) MarshalTo(dAtA []byte) (int, error) {
 		}
 	}
 	if len(m.CopExecInfo) > 0 {
-		dAtA[i] = 0x6a
+		dAtA[i] = 0x7a
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.CopExecInfo)))
 		i += copy(dAtA[i:], m.CopExecInfo)
 	}
 	if m.MemoryBytes != 0 {
-		dAtA[i] = 0x70
+		dAtA[i] = 0x80
+		i++
+		dAtA[i] = 0x1
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(m.MemoryBytes))
 	}
 	if m.DiskBytes != 0 {
-		dAtA[i] = 0x78
+		dAtA[i] = 0x88
+		i++
+		dAtA[i] = 0x1
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(m.DiskBytes))
 	}
 	return i, nil
 }
 
-func (m *AccessObject) Marshal() (dAtA []byte, err error) {
+func (m *ExplainOperator_ScanObject) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	if m.ScanObject != nil {
+		dAtA[i] = 0x4a
+		i++
+		i = encodeVarintExplain(dAtA, i, uint64(m.ScanObject.Size()))
+		n3, err := m.ScanObject.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n3
+	}
+	return i, nil
+}
+func (m *ExplainOperator_DynamicPartitionObjects) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	if m.DynamicPartitionObjects != nil {
+		dAtA[i] = 0x52
+		i++
+		i = encodeVarintExplain(dAtA, i, uint64(m.DynamicPartitionObjects.Size()))
+		n4, err := m.DynamicPartitionObjects.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
+	}
+	return i, nil
+}
+func (m *ExplainOperator_OtherObject) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	dAtA[i] = 0x5a
+	i++
+	i = encodeVarintExplain(dAtA, i, uint64(len(m.OtherObject)))
+	i += copy(dAtA[i:], m.OtherObject)
+	return i, nil
+}
+func (m *DynamicPartitionAccessObjects) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -512,25 +768,141 @@ func (m *AccessObject) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AccessObject) MarshalTo(dAtA []byte) (int, error) {
+func (m *DynamicPartitionAccessObjects) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
-	if len(m.Table) > 0 {
+	if len(m.Objects) > 0 {
+		for _, msg := range m.Objects {
+			dAtA[i] = 0xa
+			i++
+			i = encodeVarintExplain(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *DynamicPartitionAccessObject) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DynamicPartitionAccessObject) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Database) > 0 {
 		dAtA[i] = 0xa
+		i++
+		i = encodeVarintExplain(dAtA, i, uint64(len(m.Database)))
+		i += copy(dAtA[i:], m.Database)
+	}
+	if len(m.Table) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintExplain(dAtA, i, uint64(len(m.Table)))
+		i += copy(dAtA[i:], m.Table)
+	}
+	if m.AllPartition {
+		dAtA[i] = 0x18
+		i++
+		if m.AllPartition {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i++
+	}
+	if len(m.Partitions) > 0 {
+		for _, s := range m.Partitions {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	return i, nil
+}
+
+func (m *ScanAccessObject) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScanAccessObject) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Database) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintExplain(dAtA, i, uint64(len(m.Database)))
+		i += copy(dAtA[i:], m.Database)
+	}
+	if len(m.Table) > 0 {
+		dAtA[i] = 0x12
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.Table)))
 		i += copy(dAtA[i:], m.Table)
 	}
 	if len(m.Index) > 0 {
-		dAtA[i] = 0x12
+		dAtA[i] = 0x1a
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.Index)))
 		i += copy(dAtA[i:], m.Index)
 	}
+	if len(m.IndexCols) > 0 {
+		for _, s := range m.IndexCols {
+			dAtA[i] = 0x22
+			i++
+			l = len(s)
+			for l >= 1<<7 {
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
+				l >>= 7
+				i++
+			}
+			dAtA[i] = uint8(l)
+			i++
+			i += copy(dAtA[i:], s)
+		}
+	}
+	if m.IsClusteredIndex {
+		dAtA[i] = 0x28
+		i++
+		if m.IsClusteredIndex {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i++
+	}
 	if len(m.Partition) > 0 {
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x32
 		i++
 		i = encodeVarintExplain(dAtA, i, uint64(len(m.Partition)))
 		i += copy(dAtA[i:], m.Partition)
@@ -600,11 +972,8 @@ func (m *ExplainOperator) Size() (n int) {
 	if m.StoreType != 0 {
 		n += 1 + sovExplain(uint64(m.StoreType))
 	}
-	if len(m.AccessObjects) > 0 {
-		for _, e := range m.AccessObjects {
-			l = e.Size()
-			n += 1 + l + sovExplain(uint64(l))
-		}
+	if m.AccessObject != nil {
+		n += m.AccessObject.Size()
 	}
 	l = len(m.OperatorInfo)
 	if l > 0 {
@@ -625,17 +994,81 @@ func (m *ExplainOperator) Size() (n int) {
 		n += 1 + l + sovExplain(uint64(l))
 	}
 	if m.MemoryBytes != 0 {
-		n += 1 + sovExplain(uint64(m.MemoryBytes))
+		n += 2 + sovExplain(uint64(m.MemoryBytes))
 	}
 	if m.DiskBytes != 0 {
-		n += 1 + sovExplain(uint64(m.DiskBytes))
+		n += 2 + sovExplain(uint64(m.DiskBytes))
 	}
 	return n
 }
 
-func (m *AccessObject) Size() (n int) {
+func (m *ExplainOperator_ScanObject) Size() (n int) {
 	var l int
 	_ = l
+	if m.ScanObject != nil {
+		l = m.ScanObject.Size()
+		n += 1 + l + sovExplain(uint64(l))
+	}
+	return n
+}
+func (m *ExplainOperator_DynamicPartitionObjects) Size() (n int) {
+	var l int
+	_ = l
+	if m.DynamicPartitionObjects != nil {
+		l = m.DynamicPartitionObjects.Size()
+		n += 1 + l + sovExplain(uint64(l))
+	}
+	return n
+}
+func (m *ExplainOperator_OtherObject) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.OtherObject)
+	n += 1 + l + sovExplain(uint64(l))
+	return n
+}
+func (m *DynamicPartitionAccessObjects) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Objects) > 0 {
+		for _, e := range m.Objects {
+			l = e.Size()
+			n += 1 + l + sovExplain(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DynamicPartitionAccessObject) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Database)
+	if l > 0 {
+		n += 1 + l + sovExplain(uint64(l))
+	}
+	l = len(m.Table)
+	if l > 0 {
+		n += 1 + l + sovExplain(uint64(l))
+	}
+	if m.AllPartition {
+		n += 2
+	}
+	if len(m.Partitions) > 0 {
+		for _, s := range m.Partitions {
+			l = len(s)
+			n += 1 + l + sovExplain(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ScanAccessObject) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Database)
+	if l > 0 {
+		n += 1 + l + sovExplain(uint64(l))
+	}
 	l = len(m.Table)
 	if l > 0 {
 		n += 1 + l + sovExplain(uint64(l))
@@ -643,6 +1076,15 @@ func (m *AccessObject) Size() (n int) {
 	l = len(m.Index)
 	if l > 0 {
 		n += 1 + l + sovExplain(uint64(l))
+	}
+	if len(m.IndexCols) > 0 {
+		for _, s := range m.IndexCols {
+			l = len(s)
+			n += 1 + l + sovExplain(uint64(l))
+		}
+	}
+	if m.IsClusteredIndex {
+		n += 2
 	}
 	l = len(m.Partition)
 	if l > 0 {
@@ -1007,7 +1449,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			}
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AccessObjects", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanObject", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1031,12 +1473,74 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AccessObjects = append(m.AccessObjects, &AccessObject{})
-			if err := m.AccessObjects[len(m.AccessObjects)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			v := &ScanAccessObject{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			m.AccessObject = &ExplainOperator_ScanObject{v}
 			iNdEx = postIndex
 		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DynamicPartitionObjects", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &DynamicPartitionAccessObjects{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.AccessObject = &ExplainOperator_DynamicPartitionObjects{v}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OtherObject", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessObject = &ExplainOperator_OtherObject{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatorInfo", wireType)
 			}
@@ -1065,7 +1569,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			}
 			m.OperatorInfo = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 11:
+		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RootBasicExecInfo", wireType)
 			}
@@ -1094,7 +1598,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			}
 			m.RootBasicExecInfo = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 12:
+		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RootGroupExecInfo", wireType)
 			}
@@ -1123,7 +1627,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			}
 			m.RootGroupExecInfo = append(m.RootGroupExecInfo, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
-		case 13:
+		case 15:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CopExecInfo", wireType)
 			}
@@ -1152,7 +1656,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 			}
 			m.CopExecInfo = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 14:
+		case 16:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MemoryBytes", wireType)
 			}
@@ -1171,7 +1675,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 15:
+		case 17:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DiskBytes", wireType)
 			}
@@ -1211,7 +1715,7 @@ func (m *ExplainOperator) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AccessObject) Unmarshal(dAtA []byte) error {
+func (m *DynamicPartitionAccessObjects) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1234,13 +1738,123 @@ func (m *AccessObject) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AccessObject: wiretype end group for non-group")
+			return fmt.Errorf("proto: DynamicPartitionAccessObjects: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AccessObject: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DynamicPartitionAccessObjects: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Objects", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Objects = append(m.Objects, &DynamicPartitionAccessObject{})
+			if err := m.Objects[len(m.Objects)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipExplain(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthExplain
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DynamicPartitionAccessObject) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowExplain
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DynamicPartitionAccessObject: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DynamicPartitionAccessObject: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Database", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Database = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Table", wireType)
 			}
@@ -1269,7 +1883,164 @@ func (m *AccessObject) Unmarshal(dAtA []byte) error {
 			}
 			m.Table = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllPartition", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AllPartition = bool(v != 0)
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Partitions", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Partitions = append(m.Partitions, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipExplain(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthExplain
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScanAccessObject) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowExplain
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScanAccessObject: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScanAccessObject: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Database", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Database = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Table", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Table = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
 			}
@@ -1298,7 +2069,56 @@ func (m *AccessObject) Unmarshal(dAtA []byte) error {
 			}
 			m.Index = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexCols", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthExplain
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IndexCols = append(m.IndexCols, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsClusteredIndex", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowExplain
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsClusteredIndex = bool(v != 0)
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Partition", wireType)
 			}
@@ -1456,50 +2276,61 @@ var (
 func init() { proto.RegisterFile("explain.proto", fileDescriptorExplain) }
 
 var fileDescriptorExplain = []byte{
-	// 706 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x94, 0x41, 0x6f, 0xe4, 0x34,
-	0x14, 0xc7, 0x9b, 0x99, 0x74, 0x27, 0x79, 0x99, 0x69, 0x83, 0xd5, 0x4a, 0x59, 0x04, 0xd5, 0x50,
-	0x2e, 0xdd, 0x82, 0x66, 0xb5, 0xcb, 0x05, 0x0e, 0x1c, 0xb6, 0x74, 0x41, 0x48, 0x48, 0x8b, 0xd2,
-	0x1e, 0xb8, 0x45, 0x8e, 0xf3, 0x3a, 0x35, 0x33, 0xf1, 0xb3, 0x6c, 0xa7, 0xed, 0x7c, 0x13, 0x3e,
-	0x12, 0x12, 0x17, 0xce, 0x9c, 0x50, 0xf9, 0x22, 0xc8, 0xce, 0xcc, 0x74, 0xe0, 0xd0, 0xdb, 0xdf,
-	0xff, 0xff, 0xef, 0xd9, 0x2f, 0xf6, 0x53, 0x60, 0x82, 0x0f, 0x7a, 0xc9, 0xa5, 0x9a, 0x69, 0x43,
-	0x8e, 0x58, 0xec, 0xa4, 0xae, 0x3f, 0x3e, 0x9a, 0xd3, 0x9c, 0x82, 0xf1, 0xda, 0xab, 0x3e, 0x3b,
-	0xfd, 0x23, 0x82, 0xec, 0x7d, 0x4f, 0x5f, 0x72, 0xc7, 0xd9, 0x2b, 0x88, 0x5b, 0x2e, 0x55, 0x11,
-	0x4d, 0xa3, 0xb3, 0xec, 0xed, 0xf1, 0xcc, 0x97, 0xce, 0xd6, 0xc0, 0x07, 0x8d, 0x86, 0x3b, 0x32,
-	0x65, 0x40, 0x3c, 0x2a, 0x1c, 0xda, 0x62, 0x30, 0x1d, 0x3e, 0x83, 0x7a, 0x84, 0x7d, 0x09, 0xec,
-	0x5e, 0xba, 0xdb, 0xca, 0x74, 0xca, 0xc9, 0x16, 0x2b, 0xeb, 0xb8, 0xb3, 0xc5, 0x70, 0x1a, 0x9d,
-	0x25, 0x65, 0xee, 0x93, 0xb2, 0x0f, 0xae, 0xbc, 0xcf, 0xbe, 0x86, 0x97, 0x8d, 0xb4, 0x82, 0x9b,
-	0x06, 0x9b, 0xaa, 0xe9, 0xb0, 0x72, 0x54, 0x39, 0xa2, 0x6a, 0x49, 0x6a, 0x5e, 0xc4, 0xa1, 0xe8,
-	0x78, 0x0b, 0x5c, 0x76, 0x78, 0x4d, 0xd7, 0x44, 0x3f, 0x91, 0x9a, 0x9f, 0xfe, 0x15, 0xc3, 0xe1,
-	0xff, 0x3a, 0x60, 0x0c, 0x62, 0xc5, 0x5b, 0x0c, 0x5f, 0x94, 0x96, 0x41, 0xb3, 0x37, 0x90, 0x88,
-	0x5b, 0xb9, 0x6c, 0x0c, 0xaa, 0xe7, 0xdb, 0xdf, 0x62, 0xec, 0x0d, 0x64, 0x8d, 0x91, 0x77, 0x68,
-	0x2a, 0x2b, 0x1b, 0x0c, 0xbd, 0x1f, 0xbc, 0xcd, 0xfb, 0xaa, 0xcb, 0x10, 0x5c, 0xc9, 0x06, 0x4b,
-	0x68, 0xb6, 0xda, 0x9f, 0x2c, 0xc8, 0xba, 0xd0, 0x72, 0x54, 0x06, 0xcd, 0x5e, 0x42, 0x82, 0xd6,
-	0x55, 0x86, 0xee, 0x6d, 0xb1, 0x1f, 0xfc, 0x11, 0x5a, 0x57, 0xd2, 0xbd, 0xf5, 0x11, 0x17, 0xeb,
-	0xe8, 0xc5, 0x34, 0x3a, 0x8b, 0xcb, 0x11, 0x17, 0x7d, 0xf4, 0x05, 0xa4, 0x8e, 0xdb, 0x45, 0xe5,
-	0x56, 0x1a, 0x8b, 0x51, 0x38, 0xfa, 0xa0, 0x3f, 0xfa, 0x9a, 0xdb, 0xc5, 0xf5, 0x4a, 0x63, 0x99,
-	0xb8, 0xb5, 0x62, 0x33, 0x00, 0xeb, 0xc8, 0x60, 0x4f, 0x27, 0x81, 0x3e, 0xec, 0xe9, 0x2b, 0xef,
-	0x07, 0x3c, 0xb5, 0x1b, 0xc9, 0xbe, 0x81, 0x03, 0x2e, 0x04, 0x5a, 0x5b, 0x51, 0xfd, 0x2b, 0x0a,
-	0x67, 0x8b, 0x34, 0x5c, 0x09, 0xeb, 0x6b, 0xde, 0x85, 0xec, 0x43, 0x88, 0xca, 0x09, 0xdf, 0x59,
-	0x59, 0xf6, 0x39, 0x4c, 0x68, 0x7d, 0x55, 0x95, 0x54, 0x37, 0x54, 0x40, 0xb8, 0xe4, 0xf1, 0xc6,
-	0xfc, 0x51, 0xdd, 0x10, 0x7b, 0x0d, 0x47, 0x86, 0xc8, 0x55, 0x35, 0xb7, 0x52, 0x54, 0xf8, 0x80,
-	0xa2, 0x67, 0xb3, 0xc0, 0x7e, 0xe4, 0xb3, 0x0b, 0x1f, 0xbd, 0x7f, 0x40, 0xf1, 0x9f, 0x82, 0xb9,
-	0xa1, 0x4e, 0xef, 0x14, 0x8c, 0xa7, 0xc3, 0x4d, 0xc1, 0x0f, 0x3e, 0xda, 0x16, 0x9c, 0xc2, 0x44,
-	0xd0, 0x2e, 0x39, 0x09, 0x5b, 0x67, 0x82, 0x9e, 0x98, 0xcf, 0x60, 0xdc, 0x62, 0x4b, 0x66, 0x55,
-	0xd5, 0x2b, 0x3f, 0xb5, 0x07, 0xd3, 0xe8, 0x6c, 0x58, 0x66, 0xbd, 0x77, 0xe1, 0x2d, 0xf6, 0x29,
-	0x40, 0x23, 0xed, 0x62, 0x0d, 0x1c, 0x06, 0x20, 0xf5, 0x4e, 0x88, 0x4f, 0x7f, 0x81, 0xf1, 0xee,
-	0x5d, 0xb0, 0x23, 0xd8, 0x77, 0xbc, 0x5e, 0x6e, 0x26, 0xab, 0x5f, 0x78, 0x57, 0xaa, 0x06, 0x1f,
-	0x8a, 0x41, 0xef, 0x86, 0x05, 0xfb, 0x04, 0x52, 0xcd, 0x8d, 0x93, 0x4e, 0x92, 0x0a, 0xb3, 0x93,
-	0x96, 0x4f, 0xc6, 0xf9, 0x3b, 0x48, 0x36, 0xef, 0xc8, 0x32, 0x18, 0x75, 0x6a, 0xa1, 0xe8, 0x5e,
-	0xe5, 0x7b, 0x2c, 0x81, 0xd8, 0x7f, 0x6d, 0x1e, 0xb1, 0x11, 0x0c, 0x05, 0xe9, 0x7c, 0xc0, 0xc6,
-	0x90, 0xd4, 0xdc, 0x89, 0xdb, 0xef, 0x48, 0xe7, 0x43, 0x6f, 0xb7, 0x5a, 0xe7, 0xf1, 0xf9, 0xb7,
-	0x90, 0x6e, 0x1f, 0x97, 0x1d, 0x42, 0xd6, 0x29, 0xab, 0x51, 0xc8, 0x1b, 0x89, 0x4d, 0xbf, 0x8f,
-	0x93, 0x4d, 0x9d, 0x47, 0xbd, 0x5a, 0xdc, 0xe5, 0x03, 0x7f, 0x90, 0x93, 0x37, 0x4b, 0x6e, 0x6f,
-	0xf3, 0xe1, 0xf9, 0xf7, 0x00, 0x4f, 0x43, 0xcc, 0x52, 0xd8, 0xc7, 0x56, 0xbb, 0x55, 0xbe, 0xe7,
-	0x65, 0xdd, 0xc9, 0x65, 0x93, 0x47, 0x5e, 0x6a, 0x43, 0x35, 0xe6, 0x03, 0xbf, 0x8b, 0x45, 0x6c,
-	0xf2, 0x21, 0x9b, 0x40, 0x6a, 0x50, 0x74, 0xc6, 0xca, 0x3b, 0xcc, 0xe3, 0x8b, 0x57, 0xbf, 0x3f,
-	0x9e, 0x44, 0x7f, 0x3e, 0x9e, 0x44, 0x7f, 0x3f, 0x9e, 0x44, 0xbf, 0xfd, 0x73, 0xb2, 0x07, 0xc7,
-	0x82, 0xda, 0x99, 0x96, 0x6a, 0x2e, 0xb8, 0x9e, 0xf9, 0x26, 0xc2, 0x54, 0xfd, 0x1c, 0xd5, 0x2f,
-	0xc2, 0x0f, 0xe8, 0xab, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xbb, 0xce, 0xee, 0xe0, 0xad, 0x04,
-	0x00, 0x00,
+	// 884 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x95, 0xcd, 0x6e, 0xe3, 0x36,
+	0x10, 0xc7, 0x2d, 0x7f, 0xc4, 0xd6, 0xc8, 0x8e, 0xb5, 0x44, 0xd2, 0x2a, 0x8b, 0x5d, 0xc3, 0x75,
+	0x2e, 0xd9, 0xb4, 0xf0, 0x62, 0xb7, 0x97, 0x16, 0x68, 0x0f, 0x9b, 0x64, 0xdb, 0x2c, 0x50, 0x60,
+	0x03, 0x25, 0xd7, 0x42, 0xa0, 0x48, 0xc6, 0x66, 0x2d, 0x6b, 0x04, 0x92, 0x4e, 0xe2, 0x07, 0x29,
+	0xd0, 0x17, 0x2a, 0x50, 0xa0, 0x97, 0x3e, 0x42, 0x91, 0x3e, 0x42, 0x5f, 0xa0, 0x20, 0x25, 0xd9,
+	0x69, 0x0e, 0x29, 0xd0, 0xdb, 0x70, 0xfe, 0xbf, 0xf9, 0x10, 0x87, 0xa4, 0x60, 0x20, 0xee, 0x8a,
+	0x8c, 0xca, 0x7c, 0x5a, 0x28, 0x34, 0x48, 0xda, 0x46, 0x16, 0xe9, 0xf3, 0xbd, 0x19, 0xce, 0xd0,
+	0x39, 0x5e, 0x5b, 0xab, 0xd4, 0x26, 0xbf, 0x7b, 0x10, 0xbc, 0x2f, 0xe9, 0x33, 0x6a, 0x28, 0x79,
+	0x05, 0xed, 0x25, 0x95, 0x79, 0xe4, 0x8d, 0xbd, 0xa3, 0xe0, 0xed, 0xfe, 0xd4, 0x86, 0x4e, 0x2b,
+	0xe0, 0x63, 0x21, 0x14, 0x35, 0xa8, 0x62, 0x87, 0x58, 0x94, 0x19, 0xa1, 0xa3, 0xe6, 0xb8, 0xf5,
+	0x04, 0x6a, 0x11, 0xf2, 0x05, 0x90, 0x5b, 0x69, 0xe6, 0x89, 0x5a, 0xe5, 0x46, 0x2e, 0x45, 0xa2,
+	0x0d, 0x35, 0x3a, 0x6a, 0x8d, 0xbd, 0xa3, 0x5e, 0x1c, 0x5a, 0x25, 0x2e, 0x85, 0x4b, 0xeb, 0x27,
+	0x5f, 0xc1, 0x01, 0x97, 0x9a, 0x51, 0xc5, 0x05, 0x4f, 0xf8, 0x4a, 0x24, 0x06, 0x13, 0x83, 0x98,
+	0x64, 0x98, 0xcf, 0xa2, 0xb6, 0x0b, 0xda, 0xdf, 0x00, 0x67, 0x2b, 0x71, 0x85, 0x57, 0x88, 0x3f,
+	0x60, 0x3e, 0x9b, 0xfc, 0xdd, 0x81, 0xe1, 0xa3, 0x0e, 0x08, 0x81, 0x76, 0x4e, 0x97, 0xc2, 0x7d,
+	0x91, 0x1f, 0x3b, 0x9b, 0xbc, 0x81, 0x1e, 0x9b, 0xcb, 0x8c, 0x2b, 0x91, 0x3f, 0xdd, 0xfe, 0x06,
+	0x23, 0x6f, 0x20, 0xe0, 0x4a, 0xde, 0x08, 0x95, 0x68, 0xc9, 0x85, 0xeb, 0x7d, 0xf7, 0x6d, 0x58,
+	0x46, 0x9d, 0x39, 0xe1, 0x52, 0x72, 0x11, 0x03, 0xdf, 0xd8, 0xb6, 0x32, 0x43, 0x6d, 0x5c, 0xcb,
+	0x5e, 0xec, 0x6c, 0x72, 0x00, 0x3d, 0xa1, 0x4d, 0xa2, 0xf0, 0x56, 0x47, 0x1d, 0xe7, 0xef, 0x0a,
+	0x6d, 0x62, 0xbc, 0xd5, 0x56, 0xa2, 0xac, 0x92, 0x76, 0xc6, 0xde, 0x51, 0x3b, 0xee, 0x52, 0x56,
+	0x4a, 0x9f, 0x83, 0x6f, 0xa8, 0x5e, 0x24, 0x66, 0x5d, 0x88, 0xa8, 0xeb, 0x4a, 0xef, 0x96, 0xa5,
+	0xaf, 0xa8, 0x5e, 0x5c, 0xad, 0x0b, 0x11, 0xf7, 0x4c, 0x65, 0x91, 0x29, 0x80, 0x36, 0xa8, 0x44,
+	0x49, 0xf7, 0x1c, 0x3d, 0x2c, 0xe9, 0x4b, 0xeb, 0x77, 0xb8, 0xaf, 0x6b, 0x93, 0x7c, 0x0d, 0x81,
+	0x66, 0x34, 0x4f, 0x30, 0xfd, 0x49, 0x30, 0x13, 0xf9, 0x6e, 0xf2, 0x9f, 0x54, 0x01, 0x8c, 0xe6,
+	0xef, 0x18, 0x13, 0x5a, 0x7f, 0x74, 0xea, 0x79, 0x23, 0x06, 0x0b, 0x97, 0x2b, 0x42, 0xe1, 0x80,
+	0xaf, 0x73, 0xba, 0x94, 0x2c, 0x29, 0xa8, 0x32, 0xd2, 0x48, 0xac, 0xf3, 0xe8, 0x08, 0x5c, 0xa2,
+	0xc3, 0x6a, 0x8b, 0x4a, 0xec, 0xa2, 0xa6, 0x1e, 0x26, 0xd5, 0xe7, 0x8d, 0xf8, 0x53, 0xfe, 0x08,
+	0xa8, 0x24, 0x72, 0x08, 0x7d, 0x34, 0x73, 0xa1, 0xea, 0xf6, 0x02, 0x3b, 0xc6, 0xf3, 0x46, 0x1c,
+	0x38, 0x6f, 0xd5, 0xc7, 0x21, 0x0c, 0xb0, 0x1a, 0x59, 0x22, 0xf3, 0x6b, 0x8c, 0xfa, 0x6e, 0xd8,
+	0xfd, 0xda, 0xf9, 0x21, 0xbf, 0x46, 0xf2, 0x1a, 0xf6, 0x14, 0xa2, 0x49, 0x52, 0xaa, 0x25, 0x4b,
+	0xc4, 0x9d, 0x60, 0x25, 0x3b, 0x70, 0xec, 0x33, 0xab, 0x9d, 0x58, 0xe9, 0xfd, 0x9d, 0x60, 0xff,
+	0x0a, 0x98, 0x29, 0x5c, 0x15, 0x0f, 0x02, 0x76, 0xc7, 0xad, 0x3a, 0xe0, 0x7b, 0x2b, 0x6d, 0x02,
+	0x26, 0x30, 0x60, 0xf8, 0x90, 0x1c, 0xba, 0xd4, 0x01, 0xc3, 0x2d, 0xf3, 0x19, 0xf4, 0x97, 0x62,
+	0x89, 0x6a, 0x9d, 0xa4, 0x6b, 0x7b, 0x7b, 0xc2, 0xb1, 0x77, 0xd4, 0x8a, 0x83, 0xd2, 0x77, 0x62,
+	0x5d, 0xe4, 0x25, 0x00, 0x97, 0x7a, 0x51, 0x01, 0xcf, 0x1c, 0xe0, 0x5b, 0x8f, 0x93, 0x4f, 0x86,
+	0x30, 0xa0, 0x6e, 0xf7, 0xaa, 0x2d, 0x99, 0xfc, 0x08, 0x2f, 0x9f, 0xdc, 0x5e, 0xf2, 0x0d, 0x74,
+	0xeb, 0xa1, 0x78, 0xee, 0xb4, 0x4f, 0xfe, 0x7b, 0x28, 0x71, 0x1d, 0x32, 0xf9, 0xd9, 0x83, 0x17,
+	0x4f, 0x91, 0xe4, 0x39, 0xf4, 0x38, 0x35, 0x34, 0xa5, 0xba, 0xbe, 0x65, 0x9b, 0x35, 0xd9, 0x83,
+	0x8e, 0xa1, 0x69, 0x26, 0xa2, 0xa6, 0x13, 0xca, 0x85, 0x9d, 0x17, 0xcd, 0xb2, 0xed, 0x99, 0xa9,
+	0x9e, 0x82, 0x3e, 0xcd, 0xb2, 0x4d, 0x09, 0x32, 0x02, 0xd8, 0x00, 0x3a, 0x6a, 0xbb, 0x4d, 0x7f,
+	0xe0, 0x99, 0xfc, 0xea, 0x41, 0xf8, 0xf8, 0x7c, 0xfe, 0x8f, 0x5e, 0xf6, 0xa0, 0x23, 0x73, 0x2e,
+	0xee, 0x5c, 0x0f, 0x7e, 0x5c, 0x2e, 0xec, 0x0c, 0x9c, 0x91, 0x30, 0xcc, 0xea, 0xe2, 0xbe, 0xf3,
+	0x9c, 0x62, 0xe6, 0x1e, 0x34, 0xa9, 0x13, 0x96, 0xad, 0xb4, 0x11, 0x4a, 0xf0, 0xa4, 0xcc, 0xd0,
+	0x29, 0x1f, 0x34, 0xa9, 0x4f, 0x6b, 0xe1, 0x83, 0x4b, 0xf6, 0x02, 0xfc, 0xed, 0xa7, 0xee, 0xb8,
+	0x32, 0x5b, 0xc7, 0xf1, 0x3b, 0xe8, 0xd5, 0xb7, 0x98, 0x04, 0xd0, 0x5d, 0xe5, 0x8b, 0x1c, 0x6f,
+	0xf3, 0xb0, 0x41, 0x7a, 0xd0, 0xb6, 0x67, 0x2c, 0xf4, 0x48, 0x17, 0x5a, 0x0c, 0x8b, 0xb0, 0x49,
+	0xfa, 0xd0, 0x4b, 0xa9, 0x61, 0xf3, 0x53, 0x2c, 0xc2, 0x96, 0x75, 0x2f, 0x8b, 0x22, 0x6c, 0x1f,
+	0x7f, 0x0b, 0xfe, 0xe6, 0x6a, 0x93, 0x21, 0x04, 0xab, 0x5c, 0x17, 0x82, 0xc9, 0x6b, 0x29, 0x78,
+	0x99, 0xc7, 0x48, 0x9e, 0x86, 0x5e, 0x69, 0x2d, 0x6e, 0xc2, 0xa6, 0x2d, 0x64, 0xe4, 0x75, 0x46,
+	0xf5, 0x3c, 0x6c, 0x1d, 0x7f, 0x07, 0xb0, 0x7d, 0xc2, 0x88, 0x0f, 0x1d, 0xb1, 0x2c, 0xcc, 0x3a,
+	0x6c, 0x58, 0x33, 0x5d, 0xc9, 0x8c, 0x87, 0x9e, 0x35, 0x0b, 0x85, 0xa9, 0x08, 0x9b, 0x36, 0x8b,
+	0x16, 0x82, 0x87, 0x2d, 0x32, 0x00, 0x5f, 0x09, 0xb6, 0x52, 0x5a, 0xde, 0x88, 0xb0, 0x7d, 0xf2,
+	0xea, 0xb7, 0xfb, 0x91, 0xf7, 0xc7, 0xfd, 0xc8, 0xfb, 0xf3, 0x7e, 0xe4, 0xfd, 0xf2, 0xd7, 0xa8,
+	0x01, 0xfb, 0x0c, 0x97, 0xd3, 0x42, 0xe6, 0x33, 0x46, 0x8b, 0xa9, 0x6d, 0xc2, 0x1d, 0xbc, 0x0b,
+	0x2f, 0xdd, 0x71, 0xbf, 0x9f, 0x2f, 0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x06, 0x94, 0x58, 0xed,
+	0xab, 0x06, 0x00, 0x00,
 }

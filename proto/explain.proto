@@ -40,21 +40,39 @@ message ExplainOperator {
     StoreType store_type = 8;
 
     // The XXXReader/XXXScan/MemTable/PointGet/BatchPointGet may use this
-    repeated AccessObject access_objects = 9;
+    oneof access_object {
+        ScanAccessObject scan_object = 9;
+        DynamicPartitionAccessObjects dynamic_partition_objects = 10;
+        string other_object = 11;
+    }
 
-    string operator_info = 10;
-    string root_basic_exec_info = 11;
-    repeated string root_group_exec_info = 12;
-    string cop_exec_info = 13;
+    string operator_info = 12;
+    string root_basic_exec_info = 13;
+    repeated string root_group_exec_info = 14;
+    string cop_exec_info = 15;
 
-    int64 memory_bytes = 14;
-    int64 disk_bytes = 15;
+    int64 memory_bytes = 16;
+    int64 disk_bytes = 17;
 }
 
-message AccessObject {
-    string table = 1;
-    string index = 2;
-    string partition = 3;
+message DynamicPartitionAccessObjects {
+    repeated DynamicPartitionAccessObject objects = 1;
+}
+
+message DynamicPartitionAccessObject {
+    string database = 1;
+    string table = 2;
+    bool all_partition = 3;
+    repeated string partitions = 4;
+}
+
+message ScanAccessObject {
+    string database = 1;
+    string table = 2;
+    string index = 3;
+    repeated string index_cols = 4;
+    bool is_clustered_index = 5;
+    string partition = 6;
 }
 
 enum TaskType {

@@ -57,7 +57,9 @@
 		Window
 		ExplainData
 		ExplainOperator
-		AccessObject
+		DynamicPartitionAccessObjects
+		DynamicPartitionAccessObject
+		ScanAccessObject
 		FieldType
 		Expr
 		RpnExpr
