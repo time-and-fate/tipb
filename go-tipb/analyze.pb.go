@@ -60,6 +60,7 @@
 		DynamicPartitionAccessObjects
 		DynamicPartitionAccessObject
 		ScanAccessObject
+		IndexAccess
 		FieldType
 		Expr
 		RpnExpr

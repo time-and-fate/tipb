@@ -59,6 +59,7 @@ message DynamicPartitionAccessObjects {
     repeated DynamicPartitionAccessObject objects = 1;
 }
 
+// DynamicPartitionAccessObject represents the accessed partitions of its children
 message DynamicPartitionAccessObject {
     string database = 1;
     string table = 2;
@@ -66,13 +67,19 @@ message DynamicPartitionAccessObject {
     repeated string partitions = 4;
 }
 
+// ScanAccessObject represents the access to a single table. It may contain multiple indexes and multiple partitions.
 message ScanAccessObject {
+    // Note: if it's an access to a memory table, database field will be empty.
     string database = 1;
     string table = 2;
-    string index = 3;
-    repeated string index_cols = 4;
-    bool is_clustered_index = 5;
-    string partition = 6;
+    repeated IndexAccess indexes = 3;
+    repeated string partitions = 4;
+}
+
+message IndexAccess {
+    string name = 1;
+    repeated string cols = 2;
+    bool is_clustered_index = 3;
 }
 
 enum TaskType {
