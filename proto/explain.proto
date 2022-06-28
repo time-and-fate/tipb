@@ -15,9 +15,10 @@ option (gogoproto.unmarshaler_all) = true;
 message ExplainData {
     ExplainOperator main = 1;
     repeated ExplainOperator ctes = 2;
-    // If runtime stats are not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
+    // with_runtime_stats represents if runtime stats are available.
+    // If not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
     bool with_runtime_stats = 3;
-    // If this field is true. The main and ctes fields should be empty and should not be used.
+    // If discarded_due_to_too_long is true. The main and ctes fields should be empty and should not be used.
     // This field can be changed to a enum or int if we need to represent more states in the future.
     bool discarded_due_to_too_long = 4;
 }
@@ -29,8 +30,6 @@ message ExplainOperator {
     DriverSide driver_side = 3;
 
     // the cost of the current operator
-    // runtime stats available: cost is re-calculated using actual row count
-    // runtime stats unavailable: cost is estimated
     double cost = 4;
 
     double est_rows = 5;
@@ -59,7 +58,7 @@ message DynamicPartitionAccessObjects {
     repeated DynamicPartitionAccessObject objects = 1;
 }
 
-// DynamicPartitionAccessObject represents the accessed partitions of its children
+// DynamicPartitionAccessObject represents the partitions accessed by the children of this operator.
 message DynamicPartitionAccessObject {
     string database = 1;
     string table = 2;
@@ -69,7 +68,6 @@ message DynamicPartitionAccessObject {
 
 // ScanAccessObject represents the access to a single table. It may contain multiple indexes and multiple partitions.
 message ScanAccessObject {
-    // Note: if it's an access to a memory table, database field will be empty.
     string database = 1;
     string table = 2;
     repeated IndexAccess indexes = 3;
