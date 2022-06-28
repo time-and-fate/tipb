@@ -50,6 +50,8 @@ message ExplainOperator {
     repeated string root_group_exec_info = 14;
     string cop_exec_info = 15;
 
+    // memory_bytes and disk_bytes are expected to be displayed as "N/A" when they are -1,
+    // this will be consistent with the result of EXPLAIN ANALYZE.
     int64 memory_bytes = 16;
     int64 disk_bytes = 17;
 }

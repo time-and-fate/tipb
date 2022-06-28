@@ -172,8 +172,10 @@ type ExplainOperator struct {
 	RootBasicExecInfo string                         `protobuf:"bytes,13,opt,name=root_basic_exec_info,json=rootBasicExecInfo,proto3" json:"root_basic_exec_info,omitempty"`
 	RootGroupExecInfo []string                       `protobuf:"bytes,14,rep,name=root_group_exec_info,json=rootGroupExecInfo" json:"root_group_exec_info,omitempty"`
 	CopExecInfo       string                         `protobuf:"bytes,15,opt,name=cop_exec_info,json=copExecInfo,proto3" json:"cop_exec_info,omitempty"`
-	MemoryBytes       int64                          `protobuf:"varint,16,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"`
-	DiskBytes         int64                          `protobuf:"varint,17,opt,name=disk_bytes,json=diskBytes,proto3" json:"disk_bytes,omitempty"`
+	// memory_bytes and disk_bytes are expected to be displayed as "N/A" when they are -1,
+	// this will be consistent with the result of EXPLAIN ANALYZE.
+	MemoryBytes int64 `protobuf:"varint,16,opt,name=memory_bytes,json=memoryBytes,proto3" json:"memory_bytes,omitempty"`
+	DiskBytes   int64 `protobuf:"varint,17,opt,name=disk_bytes,json=diskBytes,proto3" json:"disk_bytes,omitempty"`
 }
 
 func (m *ExplainOperator) Reset()                    { *m = ExplainOperator{} }
