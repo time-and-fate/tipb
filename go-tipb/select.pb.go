@@ -3,14 +3,19 @@
 
 package tipb
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/gogo/protobuf/gogoproto"
+import (
+	"fmt"
 
-import github_com_pingcap_tipb_sharedbytes "github.com/pingcap/tipb/sharedbytes"
+	proto "github.com/golang/protobuf/proto"
 
-import io "io"
+	math "math"
+
+	_ "github.com/gogo/protobuf/gogoproto"
+
+	github_com_pingcap_tipb_sharedbytes "github.com/pingcap/tipb/sharedbytes"
+
+	io "io"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

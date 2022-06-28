@@ -3,14 +3,19 @@
 
 package tipb
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _ "github.com/gogo/protobuf/gogoproto"
+import (
+	"fmt"
 
-import encoding_binary "encoding/binary"
+	proto "github.com/golang/protobuf/proto"
 
-import io "io"
+	math "math"
+
+	_ "github.com/gogo/protobuf/gogoproto"
+
+	encoding_binary "encoding/binary"
+
+	io "io"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -107,9 +112,10 @@ func (DriverSide) EnumDescriptor() ([]byte, []int) { return fileDescriptorExplai
 type ExplainData struct {
 	Main *ExplainOperator   `protobuf:"bytes,1,opt,name=main" json:"main,omitempty"`
 	Ctes []*ExplainOperator `protobuf:"bytes,2,rep,name=ctes" json:"ctes,omitempty"`
-	// If runtime stats are not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
+	// with_runtime_stats represents if runtime stats are available.
+	// If not available, the act_rows, *_exec_info, memory_bytes and disk_bytes should not be used.
 	WithRuntimeStats bool `protobuf:"varint,3,opt,name=with_runtime_stats,json=withRuntimeStats,proto3" json:"with_runtime_stats,omitempty"`
-	// If this field is true. The main and ctes fields should be empty and should not be used.
+	// If discarded_due_to_too_long is true. The main and ctes fields should be empty and should not be used.
 	// This field can be changed to a enum or int if we need to represent more states in the future.
 	DiscardedDueToTooLong bool `protobuf:"varint,4,opt,name=discarded_due_to_too_long,json=discardedDueToTooLong,proto3" json:"discarded_due_to_too_long,omitempty"`
 }
@@ -152,8 +158,6 @@ type ExplainOperator struct {
 	Children   []*ExplainOperator `protobuf:"bytes,2,rep,name=children" json:"children,omitempty"`
 	DriverSide DriverSide         `protobuf:"varint,3,opt,name=driver_side,json=driverSide,proto3,enum=tipb.DriverSide" json:"driver_side,omitempty"`
 	// the cost of the current operator
-	// runtime stats available: cost is re-calculated using actual row count
-	// runtime stats unavailable: cost is estimated
 	Cost      float64   `protobuf:"fixed64,4,opt,name=cost,proto3" json:"cost,omitempty"`
 	EstRows   float64   `protobuf:"fixed64,5,opt,name=est_rows,json=estRows,proto3" json:"est_rows,omitempty"`
 	ActRows   uint64    `protobuf:"varint,6,opt,name=act_rows,json=actRows,proto3" json:"act_rows,omitempty"`
@@ -432,7 +436,7 @@ func (m *DynamicPartitionAccessObjects) GetObjects() []*DynamicPartitionAccessOb
 	return nil
 }
 
-// DynamicPartitionAccessObject represents the accessed partitions of its children
+// DynamicPartitionAccessObject represents the partitions accessed by the children of this operator.
 type DynamicPartitionAccessObject struct {
 	Database      string   `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
 	Table         string   `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
@@ -477,7 +481,6 @@ func (m *DynamicPartitionAccessObject) GetPartitions() []string {
 
 // ScanAccessObject represents the access to a single table. It may contain multiple indexes and multiple partitions.
 type ScanAccessObject struct {
-	// Note: if it's an access to a memory table, database field will be empty.
 	Database   string         `protobuf:"bytes,1,opt,name=database,proto3" json:"database,omitempty"`
 	Table      string         `protobuf:"bytes,2,opt,name=table,proto3" json:"table,omitempty"`
 	Indexes    []*IndexAccess `protobuf:"bytes,3,rep,name=indexes" json:"indexes,omitempty"`
