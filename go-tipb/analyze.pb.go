@@ -98,8 +98,6 @@ import (
 
 	math "math"
 
-	_ "github.com/gogo/protobuf/gogoproto"
-
 	encoding_binary "encoding/binary"
 
 	io "io"
